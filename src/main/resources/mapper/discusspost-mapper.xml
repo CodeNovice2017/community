@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace要写入UserMapper全路径的名,因为要指出这个配置文件是为哪个Mapper服务的要定好-->
+<mapper namespace="com.nowcoder.community.dao.DiscussPostMapper">
+
+    <sql id="selectFields">
+        id, user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+
+<!--    给这个方法写sql,那么这个方法返回的是一个List,但是集合里装的不是java自带的类型,而是DiscussPost,所以我们只需要声明DiscussPost,而List不用声明,因为List是java自带的类型-->
+<!--    设计合理的排序,先按照置顶与否倒序排列,然后按照create_time建贴的先后顺序排序-->
+<!--    limit #{offset},#{limit}配置分页,是oracle数据库自带的sql分页写法-->
+    <select id="selectDiscussPosts" resultType="DiscussPost">
+        select <include refid="selectFields"></include>
+        from discuss_post
+        where status!=2
+        <if test="userId!=0">
+            and user_id = #{userId}
+        </if>
+        order by type desc,create_time desc
+        limit #{offset},#{limit}
+    </select>
+
+    <select id="selectDiscussPostRows" resultType="int">
+        select count(id)
+        from discuss_post
+        where status!=2
+        <if test="userId!=0">
+            and user_id = #{userId}
+        </if>
+    </select>
+
+</mapper>

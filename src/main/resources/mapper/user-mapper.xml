@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace要写入UserMapper全路径的名,因为要指出这个配置文件是为哪个Mapper服务的要定好-->
+<mapper namespace="com.nowcoder.community.dao.UserMapper">
+<!--id有说法,id要写对应Mapper里面方法的名-->
+<!--返回类型原本要写com.nowcoder.community.entity.User写全,但是由于我们在properties内配置了mybatis.type-aliases-package告诉了mybatis实体类会放在哪里-->
+
+<!--    通过声明这些字段,然后用<include refid="selectFields">引用的方法,实现这部分代码的复用-->
+    <sql id="insertFields">
+        username, password, salt, email, type, status, activation_code, header_url, create_time
+    </sql>
+
+    <sql id="selectFields">
+        id, username, password, salt, email, type, status, activation_code, header_url, create_time
+    </sql>
+
+    <select id="selectById" resultType="User">
+        select <include refid="selectFields"></include>
+        from user
+        where id = #{id}
+    </select>
+<!--    <select id="selectById" resultType="User">-->
+<!--        select id, username,password,salt,email,type,status,activation_code,header_url,create_time-->
+<!--        from user-->
+<!--        where id = #{id}-->
+<!--    </select>-->
+
+    <select id="selectByName" resultType="User">
+        select <include refid="selectFields"></include>
+        from user
+        where username = #{username}
+    </select>
+
+    <select id="selectByEmail" resultType="User">
+        select <include refid="selectFields"></include>
+        from user
+        where email = #{email}
+    </select>
+
+<!--    增加user的时候,要传入user参数,要声明好这个是什么类型的参数,简单的参数比如int可以不用,但是复杂的,比如是一个bean,那么就需要声明parameterType-->
+<!--    然后还要告诉他id的字段对应的属性就是User类中与id对应的属性是什么,这是因为增加的时候,mysql底层会自动生成id,生成id后,mybatis会从mysql得到这个id,然后填入user里,这个id是mybatis从数据库获取到自动回填的-->
+    <insert id="insertUser" parameterType="User" keyProperty="id">
+        insert into user (<include refid="insertFields"></include>)
+        values(#{username}, #{password}, #{salt}, #{email}, #{type}, #{status}, #{activationCode}, #{headerUrl}, #{createTime})
+    </insert>
+
+    <update id="updateStatus">
+        update user set status = #{status} where id = #{id}
+    </update>
+
+    <update id="updateHeader">
+        update user set header_url = #{headerUrl} where id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        update user set password = #{password} where id = #{id}
+    </update>
+
+
+
+</mapper>
