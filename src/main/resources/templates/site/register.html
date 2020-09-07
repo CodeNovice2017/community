@@ -63,12 +63,16 @@
 		<div class="main">
 			<div class="container pl-5 pr-5 pt-3 pb-3 mt-3 mb-3">
 				<h3 class="text-center text-info border-bottom pb-3">注&nbsp;&nbsp;册</h3>
-				<form class="mt-5">
+				<form class="mt-5" method="post" th:action="@{/register}">
 					<div class="form-group row">
 						<label for="username" class="col-sm-2 col-form-label text-right">账号:</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="username" placeholder="请输入您的账号!" required>
-							<div class="invalid-feedback">
+<!--							name="username"要和Controller当中User对象的属性相对应-->
+<!--							同时当我们跳回错误页面的时候,错误页面是可以直接访问User的,因为在Spring MVC调用这个方法时,User已经存在Model对象中了-->
+<!--							而且我们仅是错误返回这个页面的时候才应该有默认值th:value="user.username",而首次user是空的,那么就会空指针异常,所以要有个空判断-->
+							<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.username:''}" id="username" name="username" placeholder="请输入您的账号!" required>
+<!--							因为第一次访问usernameMsg本身就是空的,所以本来就不会显示,而且不像上面user.username有下级调用会出现异常,这里即便是usernameMsg为空也不会出现问题-->
+							<div class="invalid-feedback" th:text="${usernameMsg}">
 								该账号已存在!
 							</div>
 						</div>
@@ -76,8 +80,8 @@
 					<div class="form-group row mt-4">
 						<label for="password" class="col-sm-2 col-form-label text-right">密码:</label>
 						<div class="col-sm-10">
-							<input type="password" class="form-control" id="password" placeholder="请输入您的密码!" required>
-							<div class="invalid-feedback">
+							<input type="password" th:class="|form-control ${passwordMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.password:''}" id="password" name="password" placeholder="请输入您的密码!" required>
+							<div class="invalid-feedback" th:text="${passwordMsg}">
 								密码长度不能小于8位!
 							</div>							
 						</div>
@@ -85,6 +89,7 @@
 					<div class="form-group row mt-4">
 						<label for="confirm-password" class="col-sm-2 col-form-label text-right">确认密码:</label>
 						<div class="col-sm-10">
+<!--							确认密码和密码的值是一样的,检测确认密码是否相同那是前台的逻辑,不用传给后台-->
 							<input type="password" class="form-control" id="confirm-password" placeholder="请再次输入密码!" required>
 							<div class="invalid-feedback">
 								两次输入的密码不一致!
@@ -94,8 +99,8 @@
 					<div class="form-group row">
 						<label for="email" class="col-sm-2 col-form-label text-right">邮箱:</label>
 						<div class="col-sm-10">
-							<input type="email" class="form-control" id="email" placeholder="请输入您的邮箱!" required>
-							<div class="invalid-feedback">
+							<input type="email" th:class="|form-control ${emailMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.email:''}" id="email" name="email" placeholder="请输入您的邮箱!" required>
+							<div class="invalid-feedback" th:value="${emailMsg}">
 								该邮箱已注册!
 							</div>
 						</div>
