@@ -1,14 +1,17 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.service.AlphaService;
+import com.nowcoder.community.util.CommunityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -190,4 +193,69 @@ public class AlphaController {
     }
 
 
+    // Cookie相关示例
+
+    // 模拟浏览器访问服务器第一次请求,服务器创建Cookie实现
+
+    @RequestMapping(path = "/cookie/set" ,method = RequestMethod.GET)
+    @ResponseBody
+    // 因为返回Cookie需要由Response头携带,所以需要一个Response对象作为参数
+    // 测试使用就可以运行项目,访问这个页面,f12查看浏览器network中的set请求,response中就有相关的Set-Cookie
+    // 然后还可以测试比如访问index,request header是没有cookie的,而访问有效的/alpha/cookie/get就能查看request header中有了cookie
+    // 重新编译项目后也无需先访问set,直接get即可都是保存好的,不会因为重启项目就使cookie消失
+    public String getCookie(HttpServletResponse response){
+
+        // 创建cookie
+        // 必须传入参数,没有无参构造,且一个Cookie对象只能传一组字符串
+        Cookie cookie = new Cookie("code", CommunityUtil.generateUUID());
+        // 设置Cookie生效的范围,只在/community/alpha和其子路径有效
+        cookie.setPath("/community/alpha");
+        // 浏览器得到cookie会存,默认是存在浏览器的内存中,再次访问就没了,一旦设置生成时间,会放在硬盘中,超出生存时间才会失效
+        // 十分钟
+        cookie.setMaxAge(60*10);
+        response.addCookie(cookie);
+
+        return "set cookie";
+    }
+
+    // 模拟浏览器如何携带Cookie访问浏览器
+    @RequestMapping(path = "/cookie/get" ,method = RequestMethod.GET)
+    @ResponseBody
+    // 有了cookie怎么用,可以服务器要用,取里面的值,也可以模板用
+    // 如何在服务端程序得到cookie,可以设置HTTPServletRequest对象参数,然后通过getCookies方法,但这种是直接从宿主获取,cookie数量很多的话还需要遍历从中去找
+    // 那么如何获取某一个key的cookie呢? 通过一个注解可以实现@CookieValue("code"),代表从cookie中取key为code的值给这个参数
+    public String getCookie(@CookieValue("code") String code){
+
+        System.out.println("code = " + code);
+
+        return "get Cookie";
+    }
+    
+    // Session示例
+
+    @RequestMapping(path = "/session/set" ,method = RequestMethod.GET)
+    @ResponseBody
+    public String setSession(HttpSession session){
+
+        // 在服务器端创建session不用手动创建
+        // 服务器(Spring MVC)会自动帮我们创建session,帮我们注入进来,所以说session对象的使用和request model等对象的用法是一样的,只需要声明,Spring MVC就会自动注入
+        // cookie的局限点还有cookie就只能存一些简短的字符串数据,因为一方面cookie在客户端存储,浏览器那边又无法识别代码,只能识别字符串
+        // 首次访问这个路径后,response header内会有Set-Cookie: JSESSIONID=465DEFF53CB2CE88EC92F1CA0D0880DA; Path=/community; HttpOnly
+        // 代表服务器给浏览器返回一个sessionid path是在整个项目都有效 未配置生存时间,所以默认存在内存里面,重启浏览器后消失
+        session.setAttribute("id",1);
+        session.setAttribute("name","TestSession");
+        System.out.println(session);
+
+        return "setSession";
+    }
+    @RequestMapping(path = "/session/get" ,method = RequestMethod.GET)
+    @ResponseBody
+    public String getSession(HttpSession session) {
+
+        // 取值
+        System.out.println("session = " + session);
+        System.out.println(session.getAttribute("id"));
+
+        return "getSession";
+    }
 }

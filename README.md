@@ -1,8 +1,6 @@
-[toc]
+[TOC]
 
-# 牛客社区项目笔记
-
-- Author : CodeNovice
+# 牛客社区项目
 
 ## 1 项目解析
 
@@ -154,7 +152,7 @@
 
 - ==Repository Controller Service 这些注解都是由Component来实现的,所以一共有这四种注解能够使类被Spring扫描作为bean==
 
-##### ==Spring测试学习==
+##### 如何在测试环境下测试学习Spring
 
 - ```java
   //通过下面注解实现在测试中也能引用CommunityApplication配置类,这样才接近正式环境,一会运行时的测试代码就是以CommunityApplication为配置类了
@@ -185,7 +183,7 @@
   }
   ```
 
-- ==面试题目==**SpringIoC的好处,控制反转到底是什么含义**
+##### ==面试题目==**SpringIoC的好处,控制反转到底是什么含义**
 
 - Spring管理bean的作用域
 
@@ -355,7 +353,7 @@
 
 - 视图层的两部分代码一个就是在Controller包,一个就是在resources的templates文件夹中
 
-##### Spring MVC处理请求和响应的测试学习
+##### Spring MVC处理请求和响应,包括配置/path/id型参数和/path?id=型参数
 
 - ```java
   //首先演示在Spring MVC框架之下如何获得请求对象,如何获得响应对象,这是偏底层的行为,先介绍底层,Spring MVC自带就简化也就是对这些麻烦的底层做的封装
@@ -430,6 +428,8 @@
           return "success";
       }
   ```
+
+- 
 
 - ==DispatcherServlet会调用Controller的某个方法->这个方法需要依赖业务层和数据层,Controller将获取的数据组装为Model还有视图相关的数据,然后将Model和视图数据提交给模板引擎,然后由模板引擎渲染,然后由Controller最终返还给dispatcherServlet,然后返回给浏览器==
 
@@ -957,6 +957,7 @@
   </configuration>
   ```
 
+
 ## 2 项目开发
 
 ### 2.1 邮件模块
@@ -975,7 +976,9 @@
 
 #### 模板引擎(邮件会携带链接和图片等,使用Thymeleaf发送html邮件)
 
-##### 如何在测试类中调用Thymeleaf模板引擎?
+##### ==如何在测试类或者非Controller(非MVC控制的情况下)中调用Thymeleaf模板引擎?==
+
+- ==先说项目中遇见的这种情况:就是不在Controller下,也就是不需要`@RequestMapping(path = "/index",method = RequestMethod.GET)`配置路径的情况下,仍需要thymeleaf模板引擎,这次是场景是编写发送注册的Service,我们只是需要模板引擎对html模板进行动态的加载,然后我们需要将渲染之后的html以邮件的形式发送出去,所以这个html是不需要配置路径的,因为他只是个html文件,不是任何服务端的路径,所以此时,没有被DispatcherServlet接管控制的register这个方法下是不会自动的配置thymeleaf的,只能我们主动的调用thymeleaf==
 
 - 在MVC的DispatcherServlet的帮助下,我们可以很容易的在Controller配置模板,只要返回一个String路径即可,DispatcherServlet会自动帮我们调用模板
 - 但是在Test环境下我们需要主动去调用thymeleaf模板
@@ -994,14 +997,22 @@
 
 #### 三层架构开发流程
 
+
+
 ##### thymeleaf开发register
 
 - 现在html标签添加`<html lang="en" xmlns:th="http://www.thymeleaf.org">`
-
 - 配置好各种相对路径`href="../css/global.css`修改为`th:href="@{/css/login.css}`
-- 去index页面配置好点击注册的href,将`href="site/register.html`改为`th:href="@{/site/register}`(去掉.html,前面加上/)
+- 去index页面配置好点击注册的href,将`href="site/register.html`改为`th:href="@{/register}`(去掉.html和site,前面加上/)
 - 想要复用首页的header模版,添加一个fragment`<header class="bg-dark sticky-top" th:fragment="header">`
 - 然后在register页面的对应header添加`th:replace="index::header"`,表示用这项内容替换当前标签的内容
+
+##### ==为什么将`href="site/register.html`改为`th:href="@{/register}`?==
+
+- ==首先要明白`href="site/register.html`的写法是可以访问的,只不过这只是在访问服务器静态的资源,而/site/register在Spring MVC的DispatcherServlet的控制下是Thymeleaf的模板设置的视图,通过@RequestMapping配置好的/register才是给客户提供服务的路径,单纯的访问/site/register没有什么意义,而且未来因为路径保护,除了@RequestMapping配置好的路由,其他的静态资源应该是不能通过地址进行访问的,因为这些是服务器的静态资源,而此处的href明显要改成我们想让用户访问服务器的路径,那自然是直接在项目名下加上/register即可,没有site这一层,除非在Controller配置的@RequestMapping的path就是/site/register,想让用户访问的就是`localhost:8080/community/register`==
+- 也就是说这些页面在静态页面访问的环境下是正确的,但是如果是通过动态模板加载进来的,那么这个路径就不对了,因为相对路径都会发生改变,所以如果在动态页面的环境下再去点击页面内的图片去访问相对路径的静态资源就可能会出现错误了,比如举一个例子
+- 比如我们通过`localhost:8080/community/login`来访问,那么由于配置好了Controller内的@RequestMapping相应的映射,那么Spring MVC的DispatcherServlet就会自动的装配Model和View,此时的view是`/site/login`实际上就是`/site/login.html`,(无需html是因为原本thymeleaf就是以html文件作为模板的),但是此时访问的路径依然是`localhost:8080/community/login`,那么我们看里面的比如一个未修改为动态加载的图片标签的源码为`<img src="../img/captcha.png" style="width:100px;height:40px;" class="mr-2">`,那么项目启动后,`localhost:8080/community/img/captcha.png`这个才是正确的可访问到静态资源的路径,而按照未改变的`src="../img/captcha.png"`实际上是在本地的磁盘的位置来判断路径的,按照Spring的项目结构实际这个写法的真正访问位置是`C:\workspace\Coder\Java_Codes\community\src\main\resources\templates\img\captcha.png`这肯定是错误的路径,而在本地的正确路径是`C:\workspace\Coder\Java_Codes\community\src\main\resources\static\img\captcha.png`,所以这个写法在本项目中无论是怎么静态启动还是启动项目后动态页面都是无法显示的
+- 通过在网上搜索相关知识点,static是专门存放静态资源的，如果把html文件也放在static中，传统的引入就可以使用，但是把html放在templates中，就必须采用thymeleaf的语法来引入，另外thymeleaf中的静态页面必须要去调用，无法直接访问，只有启动项目以后才可以访问，不启动无法解析,也就是说只有项目启动后,才能通过访问`localhost:8080/community/img/captcha.png`来访问到图片,这是因为项目本身配置了`server.servlet.context-path=/community`,同时static这一层是默认的,不需要加在路径中,所以才能够通过`<img th:src="@{/img/captcha.png}" style="width:100px;height:40px;" class="mr-2"/>`这样的动态配置来实现路径的正确配置
 
 ##### Commons Lang包
 
@@ -1009,9 +1020,231 @@
 
 ##### 本地域名配置
 
+- 域名配置(这个key都是我们自己取名的)方便以后上线的配置
+  `community.path.domain=http://localhost:8080`
+
+##### md5加密
+
+- md5密码加密,md5加密特点:只能加密,不能解密
+
+- 比如hello加密 -> abc123456dnf  每次加密都是这个值,但是无法解密,看起来好像挺安全,容易被暴力破解(简单密码库),所以用到了User表的salt相加起来之后再加密
+
+- ```java
+      // key作为这个password + salt
+      public static String md5(String key){
+          // Spring有这个工具,但是先做一个判断空
+          // 通过导入的第三方包org.apache.commons.lang3来进行判空,会判定key为null,为空串,为空格都是空的
+          if(StringUtils.isBlank(key)){
+              return null;
+          }
+          // 把传入的结果加密成16进制的字符串
+          return DigestUtils.md5DigestAsHex(key.getBytes());
+      }
+  ```
+
+##### 准备结束,正式开发
+
+- 发邮件要生成激活码,激活码邮件要包含域名还有项目名
+
+- 域名配了key,项目名很早就server.servlet.context-path=/community配置了
+
+- 但是这两个只是value,而不是bean,需要用到${}表示我用表达式的方式取key的值,**还要注意不要写错,因为这个字符串是不会检查是否正确的**
+
+- ```java
+      @Value("server.servlet.context-path")
+      private String contextPath;
+      @Value("community.path.domain")
+      private String domain;
+  ```
+
+- ```java
+  // 返回值可以设置为整数,表示返回不同的状态,也可以返回String,也可以返回自定义的类,这个方法返回各种错误信息,密码不能为空,账号不能为空等错误信息
+     public Map<String,Object> register(User user){
+         Map<String,Object> map = new HashMap<>();
+   
+         // 判断空值
+         // 如果用户对象为空,那么肯定是程序出现了问题了
+         if(user == null){
+             throw new IllegalArgumentException("参数不能为空");
+         }
+         // 如果用户名是空的,不能报错,账号是空的只是业务上的漏洞,但不是程序的错误,我们就把信息封装起来返回给客户端,告诉其这样是不对的
+         if(StringUtils.isBlank(user.getUsername())){
+             map.put("usernameMsg","账号不能为空");
+             return map;
+         }
+         if(StringUtils.isBlank(user.getPassword())){
+             map.put("passwordMsg","密码不能为空");
+             return map;
+         }
+         if(StringUtils.isBlank(user.getEmail())){
+             map.put("emailMsg","邮箱不能为空");
+             return map;
+         }
+   
+         // 是否已存在业务逻辑判断
+         // 验证账号
+         User u = userMapper.selectByName(user.getUsername());
+         if(u != null){
+             map.put("usernameMsg","该账号已存在");
+             return map;
+         }
+         // 验证邮箱
+         u = userMapper.selectByEmail(user.getEmail());
+         if(u != null){
+             map.put("emailMsg","该邮箱已存在");
+             return map;
+         }
+   
+         // 如果上面全通过了,那么意味着确实用户可以成功注册了
+         // 注册用户
+         // 先随机生成一个字符串salt,用substring做一个五位的长度限制
+         user.setSalt(CommunityUtil.generateUUID().substring(0,5));
+         user.setPassword(CommunityUtil.md5(user.getPassword()+user.getSalt()));
+         // 普通用户
+         user.setType(0);
+         // 尚未激活状态
+         user.setStatus(0);
+         user.setActivationCode(CommunityUtil.generateUUID());
+         user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png",new Random().nextInt(1000)));
+         user.setCreateTime(new Date());
+         // 调用insert语句之后,user对象里面就有id了,mybatis自动的生成id的回填
+         // 原因:因为我们配置了mybatis.configuration.useGeneratedKeys=true,使用自动生成id的机制,然后id的字段对应着哪个属性就会给那个属性自动的回填
+         userMapper.insertUser(user);
+   
+         // 激活邮件
+         Context context = new Context();
+         context.setVariable("email",user.getEmail());
+         // 要求激活路径应该是这样的http://localhost:8080/community/activation/101/activateCode
+         String url = domain + contextPath + "/activation/" + user.getId() + "/" + user.getActivationCode();
+         context.setVariable("url",url);
+         String content = templateEngine.process("/mail/activation",context);
+         mailClient.sendMail(user.getEmail(),"牛客网注册激活邮件",content);
+   
+         // 最后返回的map为空就代表没有问题
+         return map;
+     }
+  ```
+
+- 整个注册Service的业务逻辑就是上面的代码,大体设计是返回一个Map对象,map里面装的是键值对,解释为`消息类型,消息内容`,比如`usernameMsg,"用户名已存在"`,而当最后map为空时就代表整个流程走完了,注册成功,所有的注册业务逻辑都是在Service实现的,包括发送激活邮件,Controller装配Service后,就直接调用Controller作用就是将注册请求表单的信息(包括username,password,email,都是通过register模板的三个输入框的name属性设置同名来完成自动注入到Controller方法的参数User中的)
+
+##### 整理一下整个注册功能的运行流程
+
+- 大体的流程就是按照Controller的逻辑,下面分析一下Controller代码
+
+- ```java
+      @Autowired
+      private UserService userService;
+  
+      @RequestMapping(path = "/register",method = RequestMethod.GET)
+      public String getRegisterPage(){
+          return "/site/register";
+      }
+  
+      @RequestMapping(path = "/register",method = RequestMethod.POST)
+      // 这里可以声明三个参数去接收那三个值(账号,密码,邮箱),也可以直接加一个User对象参数,只要传入值与user对象的属性相匹配,DispatcherServelet会自动进行注入
+      public String register(Model model, User user){
+          Map<String,Object> map = userService.register(user);
+          if(map == null || map.isEmpty()){
+              // 注册成功使用重定向方式调到首页去
+              model.addAttribute("msg","注册成功,我们已经向您的邮箱发送了一封激活邮件,请尽快激活!");
+              model.addAttribute("target","/index");
+              return "/site/operate-result";
+          }else{
+              // 注册失败时,把错误消息返还给发送页面
+              model.addAttribute("usernameMsg",map.get("usernameMsg"));
+              model.addAttribute("passwordMsg",map.get("passwordMsg"));
+              model.addAttribute("emailMsg",map.get("emailMsg"));
+              return "/site/register";
+          }
+      }
+  ```
+
+- 首先自动注入了UserService,然后共声明了两个映射到相同url(/register)的@RequestMapping的方法,Spring MVC是通过不同的请求方法来进行区分的,所以这两个相同路径的@RequestMapping是不会冲突的,因为他们要处理的请求方式是不同的,一个是处理`RequestMethod.GET`,一个是处理`RequestMethod.POST`,所以第一次点击通过首页注册页面,那肯定是以GET请求进来的,肯定是由getRegisterPage方法接管,而当通过提交注册按钮之后,肯定是POST请求方式,无论成功与否都会由register方法接管,原因如下
+
+  - 点击type为submit类型的button之后,那么通常情况下,按照前端的语法,直接通过form提交的话,提交后当前页面跳转到form的action所指向的页面,而register.html的这个form表单的action刚好是`<form class="mt-5" method="post" th:action="@{/register}">`,所以就是以POST请求的方式在访问/register路径,那么自然就一直由register的方法来接管
+
+###### ==为什么注册失败之后能够保存刚输入过的用户名和提示错误信息?==
+
+- ==同时当我们跳回错误页面的时候,错误页面是可以直接访问User的,因为在Spring MVC调用这个方法时,User已经存在Model对象中了,而且我们仅是错误返回这个页面的时候才应该有默认值th:value="user.username",而首次user是空的,那么就会空指针异常,所以要有个空判断,而错误信息原本就是在注册失败时就已经保存在了Model对象中了,那么自然可以在转发Forward跳转之后获取uesrnameMsg之类的错误消息了(在网上查,因为Spring MVC默认采取的跳转方式是Forward转发,转发方式下Model的存储的数据不会消失,仍然在一个request Session会话下),具体应该是一个面试题考点:比如**Spring MVC如何传递参数到重定向后的页面?(重定向会丢失会话)**==
+
+###### 输入框样式bootstrap样式保持解释
+
+- `<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|"`
+- 还是既包含动态又包含静态的情况,只有在错误注册之后,bootstrap和页面输入框是有一个样式联动的,所以做一个动态的判断,有错误消息,就会加上is-invalid CSS的类选择器
+
+###### 常量接口(项目开发技巧)
+
+- 创建常量接口方便复用,可以让状态数字有含义
+
+- ```java
+  package com.nowcoder.community.util;
+  
+  public interface CommunityConstant {
+  
+      // 激活账号的三种状态
+  
+      int ACTIVATION_SUCCESS = 0;
+  
+      int ACTIVATION_FAILURE = 2;
+  
+      int ACTIVATION_REPEAT = 1;
+  }
+  
+  ```
+
+- **然后无论是Controller还是Service,哪里要用到这个激活账号所需的常量来判断的话就在这个类实现这个接口即可**
+
+### 2.3 会话管理
+
+#### HTTP Cookie
+
+- HTTP 无状态的 有会话的
+- 同一个浏览器访问服务器多次的请求之间是彼此独立的,没有关联的,或者说服务器无法记住浏览器的状态,无法知道你是谁
+- cookies解决这个问题
+- HTTP Cookie（也叫 Web Cookie 或浏览器 Cookie）是服务器发送到用户浏览器并保存在本地的一小块数据，它会在浏览器下次向同一服务器再发起请求时被携带并发送到服务器上。通常，它用于告知服务端两个请求是否来自同一浏览器，如保持用户的登录状态。Cookie 使基于[无状态](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview#HTTP_is_stateless_but_not_sessionless)的HTTP协议记录稳定的状态信息成为了可能。
+- 通俗来说就是,浏览器请求服务器的时候,服务器创建一个对象(Cookie),并在服务器响应的时候发送给浏览器,cookie对象表面上我们看不见,因为他在响应的头里作为一个参数,之后浏览器就会保存这个数据Cookie,而且会在下次用户请求的时候自动的在请求头里加入这个信息带回给服务器,通过这方式服务器就可以记住用户
+
+#### Cookie测试Demo(AlphaController)
+
+- ```java
+      // Cookie相关示例
+  
+      // 模拟浏览器访问服务器第一次请求,服务器创建Cookie实现
+  
+      @RequestMapping(path = "/cookie/set" ,method = RequestMethod.GET)
+      @ResponseBody
+      // 因为返回Cookie需要由Response头携带,所以需要一个Response对象作为参数
+      // 测试使用就可以运行项目,访问这个页面,f12查看浏览器network中的set请求,response中就有相关的Set-Cookie
+      // 然后还可以测试比如访问index,request header是没有cookie的,而访问有效的/alpha/cookie/get就能查看request header中有了cookie
+      // 重新编译项目后也无需先访问set,直接get即可都是保存好的,不会因为重启项目就使cookie消失
+      public String getCookie(HttpServletResponse response){
+  
+          // 创建cookie
+          // 必须传入参数,没有无参构造,且一个Cookie对象只能传一组字符串
+          Cookie cookie = new Cookie("code", CommunityUtil.generateUUID());
+          // 设置Cookie生效的范围,只在/community/alpha和其子路径有效
+          cookie.setPath("/community/alpha");
+          // 浏览器得到cookie会存,默认是存在浏览器的内存中,再次访问就没了,一旦设置生成时间,会放在硬盘中,超出生存时间才会失效
+          // 十分钟
+          cookie.setMaxAge(60*10);
+          response.addCookie(cookie);
+  
+          return "set cookie";
+      }
+      @RequestMapping(path = "/cookie/get" ,method = RequestMethod.GET)
+      @ResponseBody
+      // 有了cookie怎么用,可以服务器要用,取里面的值,也可以模板用
+      // 如何在服务端程序得到cookie,可以设置HTTPServletRequest对象参数,然后通过getCookies方法,但这种是直接从宿主获取,cookie数量很多的话还需要遍历从中去找
+      // 那么如何获取某一个key的cookie呢? 通过一个注解可以实现@CookieValue("code"),代表从cookie中取key为code的值给这个参数
+      public String getCookie(@CookieValue("code") String code){
+  
+          System.out.println("code = " + code);
+          
+          return "get Cookie";
+      }
+  ```
+
 - 
-
-
 
 
 
