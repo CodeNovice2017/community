@@ -68,6 +68,13 @@
 			<version>3.11</version>
 		</dependency>
 
+<!--		kaptcha,就是一个普通的包,并没像上面有springboot等,所以代表springboot并没有对其有什么配置,只是一个小工具,所以一般需要写一个配置类-->
+		<dependency>
+			<groupId>com.github.penggle</groupId>
+			<artifactId>kaptcha</artifactId>
+			<version>2.3.2</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

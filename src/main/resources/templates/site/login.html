@@ -63,12 +63,19 @@
 		<div class="main">
 			<div class="container pl-5 pr-5 pt-3 pb-3 mt-3 mb-3">
 				<h3 class="text-center text-info border-bottom pb-3">登&nbsp;&nbsp;录</h3>
-				<form class="mt-5">				
+				<form class="mt-5" method="post" th:action="@{/login}">
 					<div class="form-group row">
 						<label for="username" class="col-sm-2 col-form-label text-right">账号:</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control is-invalid" id="username" placeholder="请输入您的账号!" required>
-							<div class="invalid-feedback">
+<!--							name="username"和Controller方法的参数要一致-->
+<!--							就是如果说我的参数不是普通参数,而是一个User对象实体,那么SpringMVC就会把这个User装到Model里,所以我们在页面上就可以直接获取User数据-->
+<!--							但是如果是基本类型,String字符串参数,Spring MVC就不会把其放在Model里,Model中就没有,有两种办法,-->
+<!--							1,人为的加入到Model中,-->
+<!--							2,这些Controller方法中的参数都是存在于request对象中的,可以从request.getParameter也可以得到,因为这些参数也是表单提交携带过来的-->
+<!--							当程序执行到html路径的时候,这个request还没有销毁,因为请求还没有结束,可以从request中取值,这里就不主动把参数加在Model里,直接从request获取-->
+<!--							也就是这种写法`th:value="${param.username}"`这个thymeleaf语句就相当于`request.getParameters("username")`-->
+							<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|" th:value="${param.username}" id="username" name="username" placeholder="请输入您的账号!" required>
+							<div class="invalid-feedback" th:text="${usernameMsg}">
 								该账号不存在!
 							</div>
 						</div>
@@ -76,8 +83,8 @@
 					<div class="form-group row mt-4">
 						<label for="password" class="col-sm-2 col-form-label text-right">密码:</label>
 						<div class="col-sm-10">
-							<input type="password" class="form-control is-invalid" id="password" placeholder="请输入您的密码!" required>
-							<div class="invalid-feedback">
+							<input type="password" th:class="|form-control ${passwordMsg!=null?'is-invalid':''}|" th:value="${param.password}" id="password" name="password" placeholder="请输入您的密码!" required>
+							<div class="invalid-feedback" th:text="${passwordMsg}">
 								密码长度不能小于8位!
 							</div>							
 						</div>
@@ -85,20 +92,21 @@
 					<div class="form-group row mt-4">
 						<label for="verifycode" class="col-sm-2 col-form-label text-right">验证码:</label>
 						<div class="col-sm-6">
-							<input type="text" class="form-control is-invalid" id="verifycode" placeholder="请输入验证码!">
-							<div class="invalid-feedback">
+							<input type="text" th:class="|form-control ${codeMsg!=null?'is-invalid':''}|" id="verifycode" name="code" placeholder="请输入验证码!">
+							<div class="invalid-feedback" th:text="${codeMsg}">
 								验证码不正确!
 							</div>
 						</div>
 						<div class="col-sm-4">
-							<img th:src="@{/img/captcha.png}" style="width:100px;height:40px;" class="mr-2"/>
-							<a href="javascript:;" class="font-size-12 align-bottom">刷新验证码</a>
+							<img th:src="@{/kaptcha}" id="kaptcha" style="width:100px;height:40px;" class="mr-2"/>
+							<a href="javascript:refresh_kaptcha()" class="font-size-12 align-bottom">刷新验证码</a>
 						</div>
 					</div>				
 					<div class="form-group row mt-4">
 						<div class="col-sm-2"></div>
 						<div class="col-sm-10">
-							<input type="checkbox" id="remember-me" checked="checked">
+
+							<input type="checkbox" id="remember-me" name="rememberme" th:checked="${param.rememberme}">
 							<label class="form-check-label" for="remember-me">记住我</label>
 							<a href="forget.html" class="text-danger float-right">忘记密码?</a>
 						</div>
@@ -179,5 +187,17 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
 	<script th:src="@{/js/global.js}"></script>
+	<script>
+		function refresh_kaptcha(){
+			// 最好不要写死了,否则所有这种代码都这么写,以后项目名称一改全要改
+			// var path = "/community/kaptcha"
+			// 在全局global.js中配置常量,因为global.js在所有页面都引用了
+
+			// 但是这么配置也有一定问题,因为你刷新验证码访问的还是/community/kaptcha,相当于没改,有的浏览器比较智能,浏览器觉得你的图片是静态资源,而且获取的路径又不变,所以他就不会访问了
+			// 善意欺骗浏览器一下,每次都加个参数,加个随机数或者时间都可以
+			var path = CONTEXT_PATH + "/kaptcha?p=" + Math.random();
+			$("#kaptcha").attr("src",path);
+		}
+	</script>
 </body>
 </html>
