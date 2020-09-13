@@ -19,6 +19,8 @@ public class AlphaInterceptor implements HandlerInterceptor {
     // return false就是Controller就不会执行,取消这个请求了
     // 因为是拦截请求,所以参数是有HttpServletRequest,HttpServletResponse对象的,就是如果你想加一些东西在请求和响应中都是可以的
     // 还给了一个Object handler
+    // 控制台具体的返回值[AlphaInterceptor.java:25] preHandle: public java.lang.String com.nowcoder.community.controller.LoginController.getLoginPage()
+    // 就是说Object handler就是拦截的目标
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
@@ -41,7 +43,6 @@ public class AlphaInterceptor implements HandlerInterceptor {
     // 还有一个异常对象,就会如果说调用Controller,调用模板过程中出现异常,这里可以获取到异常信息
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-
 
         logger.debug("afterCompletion: " + handler.toString());
 
