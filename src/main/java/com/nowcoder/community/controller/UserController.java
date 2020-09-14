@@ -16,11 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping(path = "/user")
@@ -127,6 +130,20 @@ public class UserController {
         }
     }
 
+    // 修改密码
+    @RequestMapping(path = "/updatePassword",method = RequestMethod.POST)
+    public String updatePassword(String oldPassword,String newPassword,String ensurePassword,Model model){
 
+        User user = hostHolder.getUser();
+        Map<String,Object> map = userService.updateUserPassword(user,oldPassword,newPassword,ensurePassword);
+        if(map == null || map.isEmpty()){
+            return "redirect:/index";
+        }else{
+            model.addAttribute("oldPasswordMsg",map.get("oldPasswordMsg"));
+            model.addAttribute("newPasswordMsg",map.get("newPasswordMsg"));
+            model.addAttribute("passwordMsg",map.get("passwordMsg"));
+            return "/site/setting";
+        }
+    }
 
 }
