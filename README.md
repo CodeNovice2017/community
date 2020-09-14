@@ -1,4 +1,5 @@
-[TOC]
+<!-- MarkdownTOC -->
+<!-- /MarkdownTOC -->
 
 # 牛客社区项目
 
@@ -981,8 +982,25 @@
 - ==先说项目中遇见的这种情况:就是不在Controller下,也就是不需要`@RequestMapping(path = "/index",method = RequestMethod.GET)`配置路径的情况下,仍需要thymeleaf模板引擎,这次是场景是编写发送注册的Service,我们只是需要模板引擎对html模板进行动态的加载,然后我们需要将渲染之后的html以邮件的形式发送出去,所以这个html是不需要配置路径的,因为他只是个html文件,不是任何服务端的路径,所以此时,没有被DispatcherServlet接管控制的register这个方法下是不会自动的配置thymeleaf的,只能我们主动的调用thymeleaf==
 
 - 在MVC的DispatcherServlet的帮助下,我们可以很容易的在Controller配置模板,只要返回一个String路径即可,DispatcherServlet会自动帮我们调用模板
+
 - 但是在Test环境下我们需要主动去调用thymeleaf模板
+
 - 也不难,thymeleaf模板引擎有一个核心的类,这个类是被容器管理起来了,直接注入这个bean即可TemplateEngine
+
+- ```java
+      @Test
+      public void testHtmlMail(){
+          Context context = new Context();
+          context.setVariable("username","sunday");
+  
+          // 参数构建好,就调用模板引擎生成动态网页,经过process方法之后就可以生成一个动态网页,其实就是一个字符串
+          String content = templateEngine.process("/mail/demo",context);
+          System.out.println(content);
+          mailClient.sendMail("yt_999@163.com","迷糊",content);
+      }
+  ```
+
+- 
 
 ### 2.2 开发注册功能
 
@@ -1013,6 +1031,11 @@
 - 也就是说这些页面在静态页面访问的环境下是正确的,但是如果是通过动态模板加载进来的,那么这个路径就不对了,因为相对路径都会发生改变,所以如果在动态页面的环境下再去点击页面内的图片去访问相对路径的静态资源就可能会出现错误了,比如举一个例子
 - 比如我们通过`localhost:8080/community/login`来访问,那么由于配置好了Controller内的@RequestMapping相应的映射,那么Spring MVC的DispatcherServlet就会自动的装配Model和View,此时的view是`/site/login`实际上就是`/site/login.html`,(无需html是因为原本thymeleaf就是以html文件作为模板的),但是此时访问的路径依然是`localhost:8080/community/login`,那么我们看里面的比如一个未修改为动态加载的图片标签的源码为`<img src="../img/captcha.png" style="width:100px;height:40px;" class="mr-2">`,那么项目启动后,`localhost:8080/community/img/captcha.png`这个才是正确的可访问到静态资源的路径,而按照未改变的`src="../img/captcha.png"`实际上是在本地的磁盘的位置来判断路径的,按照Spring的项目结构实际这个写法的真正访问位置是`C:\workspace\Coder\Java_Codes\community\src\main\resources\templates\img\captcha.png`这肯定是错误的路径,而在本地的正确路径是`C:\workspace\Coder\Java_Codes\community\src\main\resources\static\img\captcha.png`,所以这个写法在本项目中无论是怎么静态启动还是启动项目后动态页面都是无法显示的
 - 通过在网上搜索相关知识点,static是专门存放静态资源的，如果把html文件也放在static中，传统的引入就可以使用，但是把html放在templates中，就必须采用thymeleaf的语法来引入，另外thymeleaf中的静态页面必须要去调用，无法直接访问，只有启动项目以后才可以访问，不启动无法解析,也就是说只有项目启动后,才能通过访问`localhost:8080/community/img/captcha.png`来访问到图片,这是因为项目本身配置了`server.servlet.context-path=/community`,同时static这一层是默认的,不需要加在路径中,所以才能够通过`<img th:src="@{/img/captcha.png}" style="width:100px;height:40px;" class="mr-2"/>`这样的动态配置来实现路径的正确配置
+
+##### thymeleaf是如果做到页面组件的复用的?
+
+- 通过在index页面进行thymeleaf动态模板的配置`<header class="bg-dark sticky-top" th:fragment="header">`,将所有页面都需要的header标签进行了复用
+- 然后只要在其余页面上通过`<header class="bg-dark sticky-top" th:replace="index::header">`即可达到用index header标签内的内容代替页面中原本的header内容(**具体是通过哪一条属性来代替,和代替的范围规则还不清楚**,但是可以知道,只要替换之后,就不需要将所有页面的header内的未使用thymeleaf配置的相对路径重新配置了,因为替换之后自动就和index的一样了)
 
 ##### Commons Lang包
 
@@ -1206,6 +1229,12 @@
 
 #### Cookie测试Demo(AlphaController)
 
+##### 如何创建cookie?
+
+##### 如何配置cookie?
+
+##### 如何在服务端获取某一个key的cookie呢?
+
 - ```java
       // Cookie相关示例
   
@@ -1234,7 +1263,7 @@
       @RequestMapping(path = "/cookie/get" ,method = RequestMethod.GET)
       @ResponseBody
       // 有了cookie怎么用,可以服务器要用,取里面的值,也可以模板用
-      // 如何在服务端程序得到cookie,可以设置HTTPServletRequest对象参数,然后通过getCookies方法,但这种是直接从宿主获取,cookie数量很多的话还需要遍历从中去找
+      // 如何在服务端程序得到cookie,可以设置HTTPServletRequest对象参数,然后通过getCookies方法,但这种是直接从Cookie[]数组获取,cookie数量很多的话还需要遍历从中去找
       // 那么如何获取某一个key的cookie呢? 通过一个注解可以实现@CookieValue("code"),代表从cookie中取key为code的值给这个参数
       public String getCookie(@CookieValue("code") String code){
   
@@ -1244,17 +1273,544 @@
       }
   ```
 
-- 
+- cookie的安全性是比较难保证,隐私的都不应该存
 
+- 在很多请求中都要发cookie给服务器,每次访问服务器就会增加数据量,对流量和性能造成影响
 
+#### Session
 
+- Session是JavaEE的标准,而不是HTTP的标准,所以在HTTP的文档中是找不到Session的相关介绍的
+- Session是解决客户端存储数据安全性的一种方式
+- 数据放在服务端肯定更安全,但是会增加服务端内存压力
+- Cookie和Session是要按情况做取舍的
+- **Session与Cookie是有关的,Session要依赖于Cookie**
+- 浏览器请求服务器,服务器创建session对象,session对象就存在服务器端,不会把整个session对象发送给浏览器,浏览器跟服务器是多对一的关系,很多浏览器都能访问服务器,每个浏览器访问都会创建一个session,当下次再访问的时候服务器怎么知道你这个浏览器和整个session对应呢?这个浏览器与session之间的依赖关系怎么找?Cookie就是关键
+- ==响应的时候,服务器自动的向浏览器发送了一份数据,这份数据是由Cookie携带的,或者说服务器的底层自动建了一个Cookie,然后在Cookie中存了一个Session的sessionid,session的sessionid是session对象的唯一标识,浏览器存cookie在本地,cookie的特点就是会自动发送Session Id回服务器==
+- **总结**:要想让服务器记录浏览器状态,具体使用cookie还是session还是视业务而定,能用cookie最好就用cookie,减轻服务端压力,没有必要存的就两个都不要用,session在只有一台服务器的情况下随便用是没有什么问题的,但是随着分布式部署,session用的越来越少了
 
+##### (面试题)**为什么分布式部署情况下,session用的越来越少了呢? 使用session会有什么问题?**
 
+- 分布式部署的多服务器之前,一般是由另一个服务器做负载均衡(负载均衡服务器也可以集群)
+- 比如服务器1较为空闲,nginx负载均衡服务器让服务器1响应了某个浏览器的请求,后来浏览器携带cookie(sessionid)又访问负载均衡服务器,但是此时服务器1较为拥堵,nginx将请求转发给了服务器3,但是服务器3没有之前这个session对象,就得不到这个session的数据了
+- 解决办法:
+  - **黏性session**,浏览器ip假如是101,由服务器1处理了第一次请求,下次访问nginx依然会将101ip给服务器1处理(问题在于很难保证负载均衡了,性能难以保证)
+  - **同步session**,服务器创建session之后,会同步给其他服务器(对服务器性能的影响,服务器之间会产生耦合,不是那么独立了,对部署不太好)
+  - **共享session**,单独搞一台服务器,这台服务器专门管理session,别的服务器都向这台服务器获取session(这台服务器是单体的,一旦他挂了,所有服务器就挂了,而且搞分布式部署就是单体瓶颈,现在瓶颈又会出现在这台服务器)
+  - **主流解决方案**,把客户端身份的数据不存在session中了,能存cookie就存cookie,敏感数据不方便就存在数据库里,数据库可以做集群组成备份,数据库之间做集群同步数据是比较成熟的,不用担心数据丢失,所有服务器都可以访问数据库拿到数据(这种都是关系型数据库,都是将数据放在硬盘中做存储和在内存中做存储比起来肯定慢一些,所以虽然方便了同步数据,但是性能上可能有缺陷,但是现在nosql数据库也是比较好用了,数据可以存到redis中)(本项目采取的解决方案,前期先存在MySQL或者Session中,之后做重构,存在redis中)
 
+### 2.4 生成验证码
 
+- 可以Java Swing在后台内存中画,但是比较麻烦
+- 也有很多现成的工具,Kaptcha(本项目采用)
 
+#### 使用
 
+- jar包导入
+- kaptcha配置类
+- 生成随机字符,生成图片
 
+#### 开发
 
+- kaptcha,就是一个普通的包,并没像上面有springboot等,所以代表springboot并没有对其有什么配置,只是一个小工具,所以一般需要写一个配置类(也就是@Configuration和bean搭配导入到springboot项目中)
 
+- 核心接口producer,两个方法createImage,createText,然后通过ctrl + n查找producer,然后通过箭头看到producer的一个具体实现类
 
+- ```java
+      @Bean
+      public Producer kaptchaProducer(){
+  
+          // Properties对象,实际上就是为了封装properties文件当中数据的,也可以在properties文件中读,当然也可以不再配置文件中写,就在这里实例化
+          Properties properties = new Properties();
+          properties.setProperty("kaptcha.image.width","100");
+          properties.setProperty("kaptcha.image.height","40");
+          properties.setProperty("kaptcha.textproducer.font.size","32");
+          properties.setProperty("kaptcha.textproducer.font.color","0,0,0");
+          // 指定随机几个字符拼在一起
+          properties.setProperty("kaptcha.textproducer.char.string","0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+          properties.setProperty("kaptcha.textproducer.char.length","4");
+          // 指定要使用哪个干扰类(噪声类),就是在图片上加几条线,加几个点之类的,防止机器人暴力破解
+          properties.setProperty("kaptcha.noise.impl","com.google.code.kaptcha.impl.NoNoise");
+          
+          DefaultKaptcha kaptcha = new DefaultKaptcha();
+          
+          // 用config对象储存配置
+          Config config = new Config(properties);
+          kaptcha.setConfig(config);
+          return kaptcha;
+      }
+  ```
+
+- Properties对象,实际上就是为了封装properties文件当中数据的,也可以在properties文件中读,当然也可以不再配置文件中写,就在这里实例化,**原因是kaptcha的key很长,文档写的也不好**
+
+#### 这个配置类写好了之后,在Controller应该在哪里使用?
+
+- ```java
+      @RequestMapping(path = "/login",method = RequestMethod.GET)
+      public String getLoginPage(){
+          return "/site/login";
+      }
+  ```
+
+- 并不是写在这个直接get请求访问的路径映射下
+
+- **这个方法的目的是是给浏览器返回一个html,而这个html里会保存一个图片的路径,浏览器会依据路径再次访问图片,我们会单独写一个请求,向浏览器放回图片,这个请求会在模板里引用它的路径**
+
+- 另外,生成验证码之后,服务端需要把这个验证码记住,当登录的时候要检查输入的对不对,这个验证码是敏感信息,并不能存在浏览器端,而且要在多个请求之中用,要存在服务器端,一次请求是生成保存,以此请求要用这个数据,所以要用到session
+
+### 2.5 登录开发
+
+- 两个请求构成(一个是头部导航栏点击,一个是点击立即登录)
+- **后台对填的数据进行一个验证,验证没问题之后,需要生成一个凭证发送给客户端,记录登录的状态,让这个状态在多个请求之间得以连续,,需要用到Cookie**
+- 点击退出,要把登录凭证改成一个失效的状态,跳到网站首页
+- 登录凭证需要一些敏感的数据,用户名,密码等,而这些内容是不能放在客户端的,所以我们要在session中存或者存放在服务端,这里存在MySQL里,之后重构存在Redis中
+- 详见login_ticket表,关键就是ticket字符串
+
+#### 开发流程思路
+
+- 先entity创建储存login_ticket表信息的封装实体类LoginTicket
+
+- 创建DAO层接口LoginTicketMapper,声明Mapper注解
+
+- 两种方式写SQL,之前学了在xml中写sql,这次用注解方式写,只要注意养成习惯每个""字符串结尾加一个空格
+
+- 同样的,之前在Mybatis写xml文件的Mapper时候声明过
+
+- ```java
+  @Mapper
+  public interface LoginTicketMapper {
+  
+      // 大括号中可以写无数个""字符串,最后拼接在一起
+      @Insert({
+              "insert into login_ticket(user_id,ticket,status,expired) ","values(#{userId},#{ticket},#{status},#{expired})"
+      })
+      // 做声明,类似于user-mapper.xml中配置的insertUser方法,这是因为insert的时候,mysql底层会自动生成id,生成id后,mybatis会从mysql得到这个id,然后填入封装对象里,这个id是mybatis从数据库获取到自动回填的
+      // useGeneratedKeys自动生成主键
+      @Options(useGeneratedKeys = true ,keyProperty = "id")
+      int insertLoginTicket(LoginTicket loginTicket);
+  
+      // 客户端用cookie存了这个数据,再次访问服务器时候,会把这个ticket给我,那么服务器就可以利用ticket查到整条数据,那就知道哪个用户在访问
+      // ticket唯一标识,不可重复
+      @Select({"select id,user_id,ticket,status,expired from login_ticket where ticket=#{ticket}"})
+      LoginTicket selectByTicket(String ticket);
+  
+      @Update({"update login_ticket set status=#{status} where ticket=#{ticket}"})
+      int updateStatus(String ticket, int status);
+  
+  }
+  ```
+
+- 建议开发DAO之后一定做一个测试,因为字符串的sql语句没有办法检测语法是否写对了,这一步是很容易出现错误的
+
+##### 如何理解用MySQL数据库表代替Session呢?
+
+- 其实在这个业务场景下,login_ticket这张表就相当于一个session了,我们可以通过cookie的信息获取到ticket,进而获取到userId等信息
+
+- 接下来开发表现层逻辑
+
+- 我需要你用户在表单传入username,password,code,rememberMe
+
+- 还需要获取用户请求/login页面时,还会请求kaptcha生成验证码图片,我们将验证码信息保存在了session中,所以需要session
+
+- 登陆成功的话还需要给用户返回ticket,通过cookie传递,所以需要HttpServletResponse
+
+- getAttribute()方法返回的是Object类型,需要做强制转换
+
+  - ```java
+    String kaptcha = (String)session.getAttribute("kaptcha");
+    ```
+
+- cookie的key value都必须要是字符串,所以要toString
+
+  - ```java
+    Cookie cookie = new Cookie("ticket", map.get("ticket").toString());
+    ```
+
+##### 如何在Html页面获取到Model对象的值或路径映射的方法中的参数的值?
+
+- 首先分析一个问题
+
+- ```html
+  				<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.username:''}" id="username" name="username" placeholder="请输入您的账号!" required>
+    
+  ```
+
+- 上面是注册页面的账号输入框,因为我们在Controller下的register方法写了如下代码
+
+  ```java
+  @RequestMapping(path = "/register",method = RequestMethod.POST)
+  // 这里可以声明三个参数去接收那三个值(账号,密码,邮箱),也可以直接加一个User对象参数,只要传入值与user对象的属性相匹配,DispatcherServelet会自动进行注入
+  public String register(Model model, User user){
+      Map<String,Object> map = userService.register(user);
+      if(map == null || map.isEmpty()){
+          // 注册成功使用重定向方式调到首页去
+          model.addAttribute("msg","注册成功,我们已经向您的邮箱发送了一封激活邮件,请尽快激活!");
+          model.addAttribute("target","/index");
+          return "/site/operate-result";
+      }else{
+          // 注册失败时,把错误消息返还给发送页面
+          model.addAttribute("usernameMsg",map.get("usernameMsg"));
+          model.addAttribute("passwordMsg",map.get("passwordMsg"));
+          model.addAttribute("emailMsg",map.get("emailMsg"));
+          return "/site/register";
+      }
+  }
+  ```
+
+- ==可以看到register方法,我们使用了一个自己定义的实体类来封装用户注册时在表单输入的数据,这是第一次用户请求注册页面,然后通过表单传递了三个参数username,password,email都对应User对象中的同名成员变量,所以Spring MVC会自动的将同名的表单参数传入User对象对应的成员属性中==
+
+- ==然后Spring MVC会自动的把User对象实例封装进Model对象实例,然后在html如果二次请求(就是用户提交注册有问题后,为了保存用户名)就可以通过直接获取`th:value="${user!=null?user.username:''}`的方式获取到想要的用户名信息(就不需要用户再次输入了)==
+
+- **参数是User对象等自己编写的对象类型时,Spring MVC会自动的填入数据,装入Model中,但是如果是基本类型或者是String类型,Spring MVC只会自动的填入同名的数据,但不会自动的装入Model对象实例中**
+
+- **就是如果说我的参数不是普通参数,而是一个User对象实体,那么SpringMVC就会把这个User装到Model里,所以我们在页面上就可以直接获取User数据,但是如果是基本类型,String字符串参数,Spring MVC就不会把其放在Model里,Model中就没有,有两种办法**
+
+- **1,人为的加入到Model中**
+
+- **2,这些Controller方法中的参数都是存在于request对象中的,可以在request.getParameter也可以得到,因为这些参数也是表单提交携带过来的,当程序执行到html路径的时候,这个request还没有销毁,因为请求还没有结束,可以从request中取值,这里就不主动把参数加在Model里,直接从request获取**
+
+- **也就是这种写法`th:value="${param.username}"`这个thymeleaf语句就相当于`request.getParameters("username")`**
+
+- 同理下面的password和rememberme也一样,特别的`th:checked="${param.rememberme}"`是先将checked的勾选写为动态的,然后传入boolean的值也可以相当于checked和unchecked
+
+#### 显示登录信息
+
+- 这部分模块会学习拦截器
+- 配置拦截器,为它指定拦截/排除的路径
+- 用户登录与否会在头部导航栏有不同的显示
+- 每一个页面都需要显示登录信息(无论是否登录,统称为登录信息)
+- 较笨的方法可以为每一个Controller都加上这么一个登录与否的判断和显示登录信息
+- 一个网站可能有上千的请求,那么如果这么做未来要变更这部分功能,那么就要修改全部内容,耦合度太高,侵入性太强
+
+##### 解决办法:利用Spring拦截器
+
+- 拦截器可以拦截指定范围的请求,拦截请求之后,可以在请求开始和结束的时候插入一些代码
+
+- 低耦合解决一些通用问题
+
+- 拦截器处理的是请求,所以一般写在Controller层(表现层)下的新建的一个interceptor包下,但是它和Controller又是彼此独立的
+
+- **使用方法**:实现HandlerInterceptor接口即可,HandlerInterceptor共有三个方法,且都做了default默认空实现,所以用哪一个就覆写哪一个方法即可
+
+- **`preHandle`方法在Controller之前执行**
+
+  - return false就是Controller就不会执行,取消这个请求了
+  - 因为是拦截请求,所以参数是有HttpServletRequest,HttpServletResponse对象的,就是如果你想加一些东西在请求和响应中都是可以的,还给了一个Object handler(下面解释了Object handler就是拦截的Controller方法)
+
+- **`postHandle`在调用完Controller以后执行的**
+
+  - 除了之前preHandle的三个参数以外,postHandle还有ModelAndView对象,因为这个方法是在Controller之后执行的,也就是说我主要的请求逻辑已经处理完了,下一步就要去模板引擎了,要去给页面返回要渲染的内容了,因此在渲染模板引擎时候,可能你需要装入一些数据,也就是在Controller请求逻辑之后,调用模板引擎之前执行
+
+- **`afterCompletion`在程序最后的执行,就是在模板引擎之后执行**
+
+  - 还有一个异常对象参数,就会如果说调用Controller,调用模板过程中出现异常,这里可以获取到异常信息
+
+- ```java
+  @Component
+  // HandlerInterceptor共有三个方法,且都做了default默认空实现,所以用哪一个就覆写哪一个方法即可
+  public class AlphaInterceptor implements HandlerInterceptor {
+  
+      private static final Logger logger = LoggerFactory.getLogger(AlphaInterceptor.class);
+  
+      // 在Controller之前执行
+      // return false就是Controller就不会执行,取消这个请求了
+      // 因为是拦截请求,所以参数是有HttpServletRequest,HttpServletResponse对象的,就是如果你想加一些东西在请求和响应中都是可以的
+      // 还给了一个Object handler
+      @Override
+      public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+  
+          logger.debug("preHandle: " + handler.toString());
+          return true;
+      }
+  
+      // 在调用完Controller以后执行的
+      // 除了之前preHandle的三个参数以外,postHandle还有ModelAndView对象,因为这个方法是在Controller之后执行的,也就是说我主要的请求逻辑已经处理完了
+      // 下一步就要去模板引擎了,要去给页面返回要渲染的内容了,因此在渲染模板引擎时候,可能你需要装入一些数据
+      // 也就是在Controller请求逻辑之后,调用模板引擎之前执行
+      @Override
+      public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+  
+          logger.debug("postHandle: " + handler.toString());
+  
+      }
+  
+      // 在程序最后的执行,就是在模板引擎之后执行
+      // 还有一个异常对象,就会如果说调用Controller,调用模板过程中出现异常,这里可以获取到异常信息
+      @Override
+      public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+  
+  
+          logger.debug("afterCompletion: " + handler.toString());
+  
+      }
+  }
+  ```
+
+- 想使用拦截器的话,还需要配置一个Configuration配置类,之前使用配置类都是为了导入第三方组件作为bean才使用的,但是这个拦截器的逻辑不是太一样
+
+- 想实现拦截器,需要在配置类实现一个接口,而不是简单的配置一个bean
+
+- 还涉及到要把在Controller下Interceptor声明的拦截器bean注入进来,再进行注册
+
+- 也就是说虽然将实现Interceptor接口的AlphaInterceptor已经注册为bean了,但是并不能直接用,还要这样在配置类下再次进行配置和注册
+
+- 注册拦截器bean就是用这么一个方法`public void addInterceptors(InterceptorRegistry registry) `,Spring调用的时候会把InterceptorRegistry对象传进来,利用传入的对象注册Interceptor
+
+- ```java
+      @Override
+      public void addInterceptors(InterceptorRegistry registry) {
+  
+          // 只是这么写一句就是把alphaInterceptor这个bean添加给它,而不是返回一个AlphaInterceptor对象实例了
+          // 但是这样只写这一句就是对全部路径都生效
+          // 排除静态资源,任浏览器访问,不需要拦截,排除掉静态资源的访问
+          // 直接排除/**/*.css,就是项目运行时,localhost:8080/community/css/*.css的路径访问的,所以通过/**/*.css进行排除
+          registry.addInterceptor(alphaInterceptor).excludePathPatterns("/**/*.css");
+  
+      }
+  ```
+
+- 测试之后发现**Object handler就是拦截的目标**,也就是拦截的Controller方法.控制的返回如下
+
+  - ```
+    [AlphaInterceptor.java:25] preHandle: public java.lang.String com.nowcoder.community.controller.LoginController.getLoginPage()
+    ```
+
+#### 登录模块思路捋顺
+
+- ==假设用户已经通过/login登录了,那么服务器给浏览器发了Cookie,Cookie内存的ticket,接下来只要浏览器在访问服务器,都会自动把Cookie发送给服务器(因为配置了Cookie的path的整个community项目),服务器得到凭证(凭证关联的是唯一的用户,能确定用户是谁),那么就可以查login_ticket表查userId,然后就可以通过user表查出用户信息,最终将用户信息显示在模板上,也就是把信息放在Model中,提交给模板,模板向浏览器响应生成一个html==
+- 还需要说一下,实现这个逻辑,获取ticket查询login_ticket得到userId,进而查询user表得到用户信息这个过程是每次请求都要这么干,这个东西要通用反复的用,所以这套逻辑应该用拦截器来实现
+
+#### 拦截器模块具体代码分析
+
+- 首先我们设计的思路应该是在**请求的最开始就完成用户信息的获取(即preHandle)**,然后在**请求处理完成,调用模板之前完成请求对象的持有,并将对象保存**(postHandle就是在模板调用之前,Controller逻辑完成之后调用的),最后要在**模板调用结束,请求结束之后释放对象的持有**,防止服务器内存爆掉(如果不清理对象的持有,那么越来越多的对象访问服务器登录,早晚服务器要内存爆掉)
+
+- 真正的代码编写流程即:先在Controller下的interceptor包创建LoginTicketInterceptor类,声明为组件@Component(这个类实际上发挥的作用就是Controller处理请求的,但是这个Controller很特殊,他只在postHandle中进行了ModelAndView数据的填入,但是我们并没有返回视图路径,并没有调用模板,只是发挥拦截器的功能,在每一个用户已登录状态下的用户信息都用User对象保存,并做了持有,另外两个方法也都是在请求之前和请求完成之后要做的处理,所以整体来看,LoginTicketInterceptor就是一个特殊的Controller处理请求,所以它被放在了Controller包下)
+
+- ```java
+  // 在请求开始之初就找到了用户信息,并暂存在了HostHolder对象(工具包下)当中
+  // 要在模板引擎调用之前就要用这个信息,所以要在模板引擎调用之前装入Model当中
+  @Component
+  public class LoginTicketInterceptor implements HandlerInterceptor {
+  
+      @Autowired
+      private UserService userService;
+  
+      @Autowired
+      private HostHolder hostHolder;
+  
+      // 应该在请求的最开始就完成用户信息的获取
+      @Override
+      public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+  
+          // 第一步是通过Cookie得到ticket
+          // 同时注意,这个方法是由接口定义的,不能加个参数之类的,不能加个参数然后声明@CookieValue()注解了,只能通过Cookie[]数组来遍历获取
+          // 那我们就将从request中获取cookie的这个功能封装一下,方便以后复用
+          String ticket = CookieUtil.getValue(request,"ticket");
+          if(ticket!=null){
+              // 查询凭证
+              LoginTicket loginTicket = userService.findLoginTicket(ticket);
+              // 检查凭证是否有效,loginTicket.getExpired().after(new Date())超时时间晚于当前时间
+              if(loginTicket!=null && loginTicket.getStatus() == 0 && loginTicket.getExpired().after(new Date())){
+                  User user = userService.findUserById(loginTicket.getUserId());
+                  // 查到以后是在模板上用,在Controller处理业务时也可能会用
+                  // 为了后面的使用,需要暂存一下User对象,或者说是在本次请求中持有用户
+                  // 那么这个对象的暂存就有说法了,怎么存储呢,有的人可能说可以存在容器中,但是要考虑的是浏览器和服务器是多对1的方式,一个服务器并发的处理多个请求
+                  // 每个浏览器访问服务器,服务器都会创建一个线程来解决请求,服务器在处理请求时,是多线程的环境,所以要存用户的时候要考虑到多线程的问题
+                  // 那么就要考虑线程的隔离,在多个线程之间隔离存储对象
+  //                ThreadLocal也是面试考察多线程的重点,需要好好研究,面试的时候可以引导项目问题到这里
+                  // 这个逻辑也封装一个小的工具
+  
+                  // 为什么能够持有呢?
+                  // 我们在这里就将数据存到了当前线程对应的map里面,这个请求只要没处理结束,这个线程就一直还在,当请求处理完,服务器向浏览器做出响应之后,这个线程被销毁
+                  // 所以在整个处理请求的过程中,在后续,这个数据都是一直活着的,也就是ThreadLocal内的数据是一直都在的,而且提供了线程隔离
+  
+                  hostHolder.setUser(user);
+  
+              }
+          }
+          return true;
+      }
+  
+      // postHandle就是在模板调用之前,Controller逻辑完成之后调用的
+      @Override
+      public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+          User user = hostHolder.getUser();
+          if(user != null && modelAndView != null){
+              modelAndView.addObject("loginUser",user);
+          }
+      }
+  
+      // 在整个请求结束的时候,模板都执行之后清理HostHolder的数据
+      @Override
+      public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+          hostHolder.clear();
+      }
+  }
+  ```
+
+- 编写完LoginTicketInterceptor之后,需要在WebMVCConfig配置类下进行配置,就是按照拦截器添加的流程,通过将一个配置类实现WebMvcConfigurer接口,然后覆写addInterceptors方法获取InterceptorRegistry容器对象(估计也是由Spring来进行管理),然后将loginTicketInterceptor刚写好的拦截器添加进容器,就可以生效了
+
+- ```java
+  @Configuration
+  public class WebMVCConfig implements WebMvcConfigurer {
+  
+      @Autowired
+      private AlphaInterceptor alphaInterceptor;
+  
+      @Autowired
+      private LoginTicketInterceptor loginTicketInterceptor;
+  
+      // 实现这么一个方法,在这个方法里注册拦截器,实际上WebMvcConfigurer接口里有很多的方法,都做了默认的实现,我们可以根据自己的需要进行覆写就行了
+      // 注册拦截器bean就是用这么一个方法
+      // Spring调用的时候会把InterceptorRegistry对象传进来,利用传入的对象注册Interceptor
+      @Override
+      public void addInterceptors(InterceptorRegistry registry) {
+  
+          // 只是这么写一句就是把alphaInterceptor这个bean添加给它,而不是返回一个AlphaInterceptor对象实例了
+          // 但是这样只写这一句就是对全部路径都生效
+          // 排除静态资源,任浏览器访问,不需要拦截,排除掉静态资源的访问
+          // 直接排除/**/*.css,就是项目运行时,localhost:8080/community/css/*.css的路径访问的,所以通过/**/*.css进行排除
+          // 配置只拦截register和login的请求
+          registry.addInterceptor(alphaInterceptor).excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg").addPathPatterns("/register","/login");
+          registry.addInterceptor(loginTicketInterceptor).excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+  
+      }
+  }
+  ```
+
+### 2.6 账号设置
+
+#### 上传文件
+
+- (要求必须是POST请求,表单要添加属性enctype="multipart/form-data",两点固定的规定),Spring MVC通过MultipartFile类来处理上传文件,很便捷
+- 两种办法,一种是存在服务器硬盘,一种是存在第三方云服务器中
+
+##### 配置文件(方便项目上线Linux之后,修改文件的存储路径)
+
+- 配置一下路径
+
+- ```properties
+  # 上传资源的存放位置
+  # *未来上线linux要修改的
+  community.path.upload=C:/workspace/Coder/Java_Codes/communityProjectData/upload
+  ```
+
+##### 三层架构开发
+
+- DAO数据访问层就不需要了,因为没有数据要存取数据库,直接上传到服务器硬盘上的某个位置
+- Service就有代码了,上传完文件之后,要更新用户User的headerUrl,所以需要提供一个改变用户头像的业务逻辑
+- 上传文件这个事情在Controller实现即可,不用在Service层实现,**为什么?**==因为最终处理文件用的是MultipartFile对象,而这个对象是属于SpringMVC的对象,如果将这个对象传给Service,那么业务层就和Spring MVC所在的表现层(Spring MVC就是在表现层的)就有了耦合,所以业务层只处理更新路径的请求即可==
+
+##### 获取头像和上传头像实现
+
+- 小知识点均在注解内
+
+- ```java
+      @RequestMapping(path = "/upload",method = RequestMethod.POST)
+      // 使用SpringMVC提供的一个专有的类型接收图像文件,如果页面传入多个,可以写成数组
+      public String uploadHeader(MultipartFile headerImage, Model model){
+  
+          if(headerImage == null){
+              model.addAttribute("error","您还没有选择图片!");
+              return "/site/setting";
+          }
+  
+          // 上传文件,肯定不能按原始文件来存,防止覆盖,但后缀不能变
+          // 先暂存文件的后缀
+          String fileName = headerImage.getOriginalFilename();
+          // 从文件截取后缀,从最后一个.截取
+          String suffix = fileName.substring(fileName.lastIndexOf("."));
+          // 有可能用户上传的图片真的没有后缀,那我们就不处理
+          if(StringUtils.isBlank(suffix)){
+              model.addAttribute("error","文件格式不正确!");
+              return "/site/setting";
+          }
+  
+          // 如果图片没问题就生成文件名
+          fileName = CommunityUtil.generateUUID() + suffix;
+          // 确定文件存放的路径,需要给一个全限定名
+          File file = new File(uploadPath + "/" + fileName);
+          // 将用户上传的头像写入目标文件中去
+          try {
+              headerImage.transferTo(file);
+          } catch (IOException e) {
+              logger.error("上传文件失败:" + e.getMessage());
+              // 在加个异常抛出去,打断整个程序,这个异常如果处理,以后会编写一个统一处理模块,统一处理Controller抛出的全部异常
+              throw new RuntimeException("上传文件失败,服务器发生异常!",e);
+          }
+  
+  //        更新当前用户的头像路径
+          //注意:这个路径可不是本地路径,提供的应该是web访问路径
+          //web访问路径目前开发阶段来说应该大体上是http://localhost:8080/community/user/header/xxx.png,系统上线之后ip:port会替换为域名
+          User user = hostHolder.getUser();
+          // 允许外界访问的web路径
+          String headerUrl = domain + contextPath + "/user/header/" + fileName;
+          userService.updateHeaderUrl(user.getId(),headerUrl);
+          // 更换成功就重定向到首页
+          return "redirect:/index";
+      }
+  
+      // 获取头像
+      @RequestMapping(path = "/header/{fileName}",method = RequestMethod.GET)
+      // 这个方法返回值为void,因为这个方法比较特别,因为它向浏览器响应的不是一个网页,是一个二进制数据的图片,所以要通过流主动向浏览器输出,要手动输出到Response,不需要视图
+      public void getHeader(@PathVariable("fileName")String fileName, HttpServletResponse httpServletResponse){
+          // 先要找到服务器存放图片的路径
+          // 带上本地路径的变量,全限定名
+          fileName = uploadPath + "/" + fileName;
+          // 浏览器输出的是这个图片,输出的时候需要先声明我输出的文件格式是什么
+          String suffix = fileName.substring(fileName.lastIndexOf("."));
+          // 响应图片,contentType格式固定image/文件后缀
+          httpServletResponse.setContentType("image/" + suffix);
+          // 因为响应的是二进制数据,所以需要字节流
+          try (
+                  FileInputStream fileInputStream = new FileInputStream(fileName);
+                  OutputStream outputStream = httpServletResponse.getOutputStream();
+          ){
+              // 获得输出流,同时要知道这么获得的输出流是Spring MVC自动管理的,他会自动的关闭,但是后面的输入流是我们自己new的,他不会帮我们管理输入流
+              // 所以要使用jdk7的特性,try加()将输入流写进括号,这样编译的时候,编译器会自动帮我们加finally,只要这个new的对象是有close()方法的,显然输入流是有的
+              // 顺手把输出流也放里面了,但是要知道输出流是可以不用放()里面的
+  
+              // 不要一个一个字节输出,建立一个缓冲,一批一批输出效率会更高,1024个字节的缓冲区
+              byte[] buffer = new byte[1024];
+              int b = 0;
+              // 每次read最多buffer缓冲区大小,用b接收读取结果,b等于-1就是没读到数据
+              while((b = fileInputStream.read(buffer)) != -1){
+                  outputStream.write(buffer,0,b);
+              }
+  
+          } catch (IOException e) {
+              logger.error("读取头像失败:" + e.getMessage());
+          }
+      }
+  ```
+
+##### 上传图片页面模板开发
+
+- 思路:先将form表单的method,提交的路径action,enctype固定的写法写好,然后将在输入框配置和Controller需要传递的参数对应的name属性
+
+- ```html
+  				<form class="mt-5" method="post" th:action="@{/user/upload}" enctype="multipart/form-data">
+  					<div class="form-group row mt-4">
+  						<label for="head-image" class="col-sm-2 col-form-label text-right">选择头像:</label>
+  						<div class="col-sm-10">
+  							<div class="custom-file">
+  <!--								文件框需要加上name,name要和Controller的请求处理方法的参数匹配起来-->
+  								<input type="file" th:class="|custom-file-input ${error!=null?'is-invalid':''}|" id="head-image" name="headerImage" lang="es" required="">
+  								<label class="custom-file-label" for="head-image" data-browse="文件">选择一张图片</label>
+  								<div class="invalid-feedback" th:text="${error}">
+  									该账号不存在!
+  								</div>
+  							</div>
+  						</div>
+  					</div>
+  					<div class="form-group row mt-4">
+  						<div class="col-sm-2"></div>
+  						<div class="col-sm-10 text-center">
+  							<button type="submit" class="btn btn-info text-white form-control">立即上传</button>
+  						</div>
+  					</div>
+  				</form>
+  ```
+
+##### thymeleaf是如何实现和请求处理Controller方法的参数映射的?
+
+- **通过在html文件的标签配置`<input type="file" th:class="|custom-file-input ${error!=null?'is-invalid':''}|" id="head-image" name="headerImage" lang="es" required="">`的name属性和Controller方法的`public String uploadHeader(MultipartFile headerImage, Model model){`的参数名相同即可**
