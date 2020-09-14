@@ -1,5 +1,6 @@
 package com.nowcoder.community.controller;
 
+import com.nowcoder.community.annotation.LoginRequired;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityUtil;
@@ -46,6 +47,7 @@ public class UserController {
     @Autowired
     private HostHolder hostHolder;
 
+    @LoginRequired
     @RequestMapping(path = "/setting",method = RequestMethod.GET)
     public String getSettingPage(){
 
@@ -53,6 +55,7 @@ public class UserController {
 
     }
 
+    @LoginRequired
     @RequestMapping(path = "/upload",method = RequestMethod.POST)
     // 使用SpringMVC提供的一个专有的类型接收图像文件,如果页面传入多个,可以写成数组
     public String uploadHeader(MultipartFile headerImage, Model model){
@@ -130,6 +133,7 @@ public class UserController {
         }
     }
 
+    @LoginRequired
     // 修改密码
     @RequestMapping(path = "/updatePassword",method = RequestMethod.POST)
     public String updatePassword(String oldPassword,String newPassword,String ensurePassword,Model model){
