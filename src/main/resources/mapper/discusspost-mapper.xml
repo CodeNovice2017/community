@@ -9,6 +9,10 @@
         id, user_id, title, content, type, status, create_time, comment_count, score
     </sql>
 
+    <sql id="insertField">
+        user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+
 <!--    给这个方法写sql,那么这个方法返回的是一个List,但是集合里装的不是java自带的类型,而是DiscussPost,所以我们只需要声明DiscussPost,而List不用声明,因为List是java自带的类型-->
 <!--    设计合理的排序,先按照置顶与否倒序排列,然后按照create_time建贴的先后顺序排序-->
 <!--    limit #{offset},#{limit}配置分页,是oracle数据库自带的sql分页写法-->
@@ -32,4 +36,20 @@
         </if>
     </select>
 
+    <insert id="insertDiscussPost" parameterType="DiscussPost">
+        INSERT INTO discuss_post(<include refid="insertField"></include>) values(#{userId},#{title},#{content},#{type},#{status},#{createTime},#{commentCount},#{score})
+    </insert>
+
+    <select id="selectDiscussPostById" resultType="DiscussPost">
+        SELECT <include refid="selectFields"></include>
+        FROM discuss_post
+        WHERE id=#{id}
+    </select>
+
+    <select id="selectDiscussPostAndUserNameById" resultType="DiscussPostAndUserName">
+        SELECT u.username, d.id, d.user_id, d.title, d.content, d.type, d.status, d.create_time, d.comment_count, d.score
+        FROM discuss_post AS d,user AS u
+        WHERE u.id = d.user_id
+        AND d.id=#{id}
+    </select>
 </mapper>

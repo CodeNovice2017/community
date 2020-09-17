@@ -258,4 +258,19 @@ public class AlphaController {
 
         return "getSession";
     }
+
+    // AJAX示例
+    // 请求的方式设置为POST,通常情况下,页面是要给服务器通过异步的方式提交一些数据,然后服务器保存之后,给浏览器返回提示
+    // 因为是异步请求,我们不会再Controller给浏览器返回网页,返回的是字符串
+    @RequestMapping(path = "/ajax",method = RequestMethod.POST)
+    @ResponseBody
+    // 希望浏览器给我提交一个name,提交一个age
+    public String testAjax(String name,int age){
+        System.out.println(name);
+        System.out.println(age);
+        return CommunityUtil.getJSONString(0,"操作成功!");
+    }
+
+
+
 }

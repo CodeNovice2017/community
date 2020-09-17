@@ -1,8 +1,10 @@
 package com.nowcoder.community.util;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.DigestUtils;
 
+import java.util.Map;
 import java.util.UUID;
 
 // 提供一些简单的静态方法,不交给容器托管了
@@ -27,6 +29,30 @@ public class CommunityUtil {
         }
         // 把传入的结果加密成16进制的字符串
         return DigestUtils.md5DigestAsHex(key.getBytes());
+    }
+
+    // JSON处理工具,获取JSON字符串
+    // 需要传入 1,编码 2,message提示信息 3,map封装业务数据(更灵活)
+    // 而且有的时候可能1,2,有的时候可能只有1
+    public static String getJSONString(int code, String msg, Map<String,Object> map){
+
+        JSONObject json = new JSONObject();
+        json.put("code",code);
+        json.put("msg",msg);
+        // map需要分散之后把每一个键值对封装进去
+        if(map!=null){
+            // 遍历map有三种方式,遍历key,遍历value,遍历key或value
+            for(String key:map.keySet()){
+                json.put(key,map.get(key));
+            }
+        }
+        return json.toJSONString();
+    }
+    public static String getJSONString(int code, String msg){
+        return getJSONString(code,msg,null);
+    }
+    public static String getJSONString(int code){
+        return getJSONString(code,null,null);
     }
 
 }

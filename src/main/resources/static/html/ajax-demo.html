@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX</title>
+</head>
+<body>
+<!--    就是一个输入,类型是按钮,一点就触发-->
+    <p>
+        <input type="button" value="发送" onclick="send()">
+    </p>
+
+
+<!--    通过JQuery官网引入,不是本地引入-->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+<script>
+    function send(){
+        // 可以使用jquery的 $.get() $.post() $.ajax() 实现上$.get() $.post()都是$.ajax()简化之后的方法, $.ajax()的配置是相对复杂的
+        $.post(
+            // 三个参数,第一个参数要访问的路径
+            "/community/alpha/ajax",
+            // 写一个js对象,js对象的直接量就是JSON格式
+            // 写出需要向服务器提交的name
+            {"name":"张三","age":"23"},
+            // 还需要一个匿名的回调函数
+            // 服务器给浏览器做出响应以后,浏览器得到这个响应之后,会调用这个回调方法,并把服务器返回的数据传给这个方法
+            // data就是服务器返回的数据,是个字符串
+            function(data){
+                // 测试data是不是String类型
+                console.log(typeof(data));
+                console.log(data);
+
+                // 把字符串把这个JSON转换为JS对象,用JQuery很方便
+                // 通过js的对象data接收服务器数据JSON转化之后的js对象
+                // 经过这句话的执行,data就变成了js对象
+                data = $.parseJSON(data);
+                console.log(typeof(data));
+                console.log(data.code);
+                console.log(data.msg);
+            }
+        );
+    }
+</script>
+</body>
+</html>

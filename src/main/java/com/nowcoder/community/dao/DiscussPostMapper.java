@@ -1,6 +1,7 @@
 package com.nowcoder.community.dao;
 
 import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.DiscussPostAndUserName;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -19,5 +20,13 @@ public interface DiscussPostMapper {
     // @Param注解用于给参数取别名,比如有的参数名比较长,嫌到sql中写的麻烦就起一个别名
     // 如果只有一个参数,并且在<if>里使用,则必须加别名,如果需要动态的拼一个条件,并且这个方法有且只有一个条件,这个时候这个参数之前就必须要取别名
     int selectDiscussPostRows(@Param("userId") int userId);
+
+    // 增加帖子的方法
+    int insertDiscussPost(DiscussPost discussPost);
+
+    // 查询帖子详情,根据帖子id查询帖子详尽信息
+    DiscussPost selectDiscussPostById(int id);
+
+    DiscussPostAndUserName selectDiscussPostAndUserNameById(int id);
 }
 
