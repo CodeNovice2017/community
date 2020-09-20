@@ -46,7 +46,7 @@ public class DiscussPost {
     public void setContent(String content) {
         this.content = content;
     }
-
+    
     public int getType() {
         return type;
     }

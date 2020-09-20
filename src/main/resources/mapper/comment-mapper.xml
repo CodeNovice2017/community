@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace要写入UserMapper全路径的名,因为要指出这个配置文件是为哪个Mapper服务的要定好-->
+<mapper namespace="com.nowcoder.community.dao.CommentMapper">
+
+    <sql id="selectFields">
+        id, user_id, entity_type, entity_id, target_id, content, status, create_time
+    </sql>
+
+    <sql id="insertFields">
+        user_id, entity_type, entity_id, target_id, content, status, create_time
+    </sql>
+
+<!--    因为返回的是集合,要用resultMap指定?-->
+    <select id="selectCommentsByEntity" resultType="Comment">
+        SELECT <include refid="selectFields"></include>
+        FROM comment
+        WHERE status=0
+        AND entity_type = #{entityType}
+        AND entity_id = #{entityId}
+        ORDER BY create_time ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectCountByEntity" resultType="int">
+        select count(id)
+        from comment
+        where status = 0
+        and entity_type = #{entityType}
+        and entity_id = #{entityId}
+    </select>
+
+</mapper>
