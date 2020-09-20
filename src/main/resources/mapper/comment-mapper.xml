@@ -32,4 +32,9 @@
         and entity_id = #{entityId}
     </select>
 
+    <insert id="insertComment" parameterType="Comment">
+        INSERT INTO comment(<include refid="insertFields"></include>)
+        VALUES(#{userId},#{entityType},#{entityId},#{targetId},#{content},#{status},#{createTime})
+    </insert>
+
 </mapper>

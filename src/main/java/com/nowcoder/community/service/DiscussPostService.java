@@ -60,4 +60,13 @@ public class DiscussPostService {
     public DiscussPostAndUserName findDiscussPostAndUserNameById(int id){
         return discussPostMapper.selectDiscussPostAndUserNameById(id);
     }
+
+    // 在帖子的业务组件加一个更新comment_count评论数的方法
+    // 因为毕竟comment_count是discuss_post表的列
+    // 然后在CommentService编写评论业务的时候,加上这个业务组件
+    // 也就是说Service不止可以依赖自己的Mapper,也可以依赖其他的Service
+    public int updateCommentCount(int id,int commentCount){
+        return discussPostMapper.updateCommentCount(id,commentCount);
+    }
+
 }

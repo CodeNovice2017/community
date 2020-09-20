@@ -71,6 +71,7 @@ public class DiscussPostController implements CommunityConstant{
 
         // 帖子评论的处理也应该是在这个请求下完成的
         // 查评论的分页信息
+        // 我们需要把无法通过页面传入Page实体对象的值,手动给Page对象添加完整
         page.setLimit(5); // 每页先显示5条评论,因为数据库数据较少
         // 因为到时候是通过page.path传入路径给thymeleaf模板引擎中,所以只需要到时候也使用@{page.path}即可自动补全路径
         page.setPath("/discuss/detail/" + discussPostId);
@@ -101,6 +102,10 @@ public class DiscussPostController implements CommunityConstant{
 
                 // 回复列表
                 // 评论的评论就不用分页了,一个页面两层分页就比较恶心了,所以直接有多少查多少,从第0条开始查
+                // 要搞懂表的逻辑,通过帖子的评论是discuss_post表中的id和comment表的entity_id相同找出的,同时这也是代表一个帖子回复的数量
+                // 评论的评论时通过comment表自己找出的,entity_type=2限制为是评论的评论,然后通过entity_id和comment表的id来判断是确定是comment表中哪一个帖子的评论的评论
+                // entity_id有没有可能出现comment的id(评论的评论)和discuss_post的id(帖子的评论)相冲突呢?不会,因为还需要判断entity_type
+                // 最后通过entity_type=2,和target_id不为0来判断是评论的评论中有指向的评论,entity_id和comment表的id相同来判断是哪一个帖子的评论的评论
                 List<Comment> replyList = commentService.findCommentsByEntity(ENTITY_TYPE_COMMENT,comment.getId(),0, Integer.MAX_VALUE);
 
                 // 回复也需要User,所以还需要回复的VO列表

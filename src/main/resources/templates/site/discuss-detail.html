@@ -163,23 +163,39 @@
 										</ul>
 <!--										动态改写之后th:id="|huifu-${rvoStat.count}|",每次id就变成了huifu-1,huifu-2每次就不同了-->
 										<div th:id="|huifu-${rvoStat.count}|" class="mt-4 collapse">
-											<div>
-												<input type="text" class="input-size" th:placeholder="|回复 ${rvo.target.username}|"/>
-											</div>
-											<div class="text-right mt-2">
-												<button type="button" class="btn btn-primary btn-sm" onclick="#">&nbsp;&nbsp;回&nbsp;&nbsp;复&nbsp;&nbsp;</button>
-											</div>
+											<form method="post" th:action="@{|/comment/add/${post.id}|}">
+												<div>
+													<input type="text" class="input-size" name="content" th:placeholder="|回复 ${rvo.user.username}|"/>
+													<!--											这是回复给评论的,所以entity_type=2-->
+													<input type="hidden" name="entityType" value="2">
+													<!--											同时这个entity_id是整个ul标签内cvo的comment的id-->
+													<input type="hidden" name="entityId" th:value="${cvo.comment.id}">
+<!--													还要多传一个目标用户的id-->
+													<input type="hidden" name="targetId" th:value="${rvo.user.id}">
+												</div>
+												<div class="text-right mt-2">
+													<button type="submit" class="btn btn-primary btn-sm" onclick="#">&nbsp;&nbsp;回&nbsp;&nbsp;复&nbsp;&nbsp;</button>
+												</div>
+											</form>
 										</div>
 									</div>
 								</li>
 								<!-- 回复输入框 -->
+								<!--			三种评论的框,这是对某个评论帖子进行评论的框-->
 								<li class="pb-3 pt-3">
-									<div>
-										<input type="text" class="input-size" placeholder="请输入你的观点"/>
-									</div>
-									<div class="text-right mt-2">
-										<button type="button" class="btn btn-primary btn-sm" onclick="#">&nbsp;&nbsp;回&nbsp;&nbsp;复&nbsp;&nbsp;</button>
-									</div>
+									<form method="post" th:action="@{|/comment/add/${post.id}|}">
+										<div>
+											<input type="text" name="content" class="input-size" placeholder="请输入你的观点"/>
+											<!--						还需要传入隐含的参数,entity_id和entity_type,所以利用隐藏框来传,type为hidden,value为1-->
+<!--											这是回复给评论的,所以entity_type=2-->
+											<input type="hidden" name="entityType" value="2">
+<!--											同时这个entity_id是整个ul标签内cvo的comment的id-->
+											<input type="hidden" name="entityId" th:value="${cvo.comment.id}">
+										</div>
+										<div class="text-right mt-2">
+											<button type="submit" class="btn btn-primary btn-sm" onclick="#">&nbsp;&nbsp;回&nbsp;&nbsp;复&nbsp;&nbsp;</button>
+										</div>
+									</form>
 								</li>
 							</ul>
 						</div>
@@ -201,11 +217,16 @@
 				</nav>
 			</div>
 			<!-- 回帖输入 -->
+<!--			三种评论的框,这是最下部评论帖子的框-->
 			<div class="container mt-3">
-				<form class="replyform">
+				<form class="replyform" method="post" th:action="@{|/comment/add/${post.id}|}">
 					<p class="mt-3">
 						<a name="replyform"></a>
-						<textarea placeholder="在这里畅所欲言你的看法吧!"></textarea>
+<!--						name属性要和comment实体当中的属性相对应-->
+						<textarea name="content" placeholder="在这里畅所欲言你的看法吧!"></textarea>
+<!--						还需要传入隐含的参数,entity_id和entity_type,所以利用隐藏框来传,type为hidden,value为1-->
+						<input type="hidden" name="entityType" value="1">
+						<input type="hidden" name="entityId" th:value="${post.id}">
 					</p>
 					<p class="text-right">
 						<button type="submit" class="btn btn-primary btn-sm">&nbsp;&nbsp;回&nbsp;&nbsp;帖&nbsp;&nbsp;</button>

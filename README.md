@@ -1,5 +1,4 @@
-<!-- MarkdownTOC -->
-<!-- /MarkdownTOC -->
+[TOC]
 
 # 牛客社区项目
 
@@ -163,20 +162,20 @@
 - **然后建立一个dao包,Data Access Object数据访问对象,这里存放的是用于访问数据库的bean**
 
 - ```java
-  @Test
-   	public void testApplicationContext(){
-   		System.out.println(applicationContext);
-   
-   		//从容器获取扫描到的bean,使用接口或者实现类都可以,如果填写AlphaDao.class,就会按照实现接口的类扫描bean,如果在AlphaDaoHibernate和AlphaDaoMybatis都仅使用了@Repository注解
-   		//那么就会报错org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'com.nowcoder.community.dao.AlphaDao' available: expected single matching bean but found 2: alphaDaoHibernateImpl,alphaDaoMybatisImpl
-   		//提示不确定到底哪个bean才是被指出的
-   		//这样的话,有两个解决方法,要么直接将参数改为AlphaDaoMybatisImpl.class,要么直接在某一个注解上添加@Primary
-   		//这就显示出了Spring IoC的优势,控制反转,也就是我这边真正的逻辑代码根本不用动,我有业务拓展需求,比如将Hibernate替换为Mybatis技术栈,我并不需要修改本java文件的代码,只要让Mybatis重写一个AlphaDao的实现类,然后给Mybatis设置一个@Primary注解即可
-   		// 因为我们这个文件依赖的是接口AlphaDao,而不是具体的实现类,调用方和实现类之间没有什么关系,这也就是依赖注入的实现
-   		// 但这样会带来新的问题,比如我仍需要Hibernate在一部分模块工作,那么一方面可以直接使用alphaDao = applicationContext.getBean(AlphaDaoHibernateImpl.class);
-   		// 另一方面可以使用@Repository("alphaHibernate")直接给予bean一个名字,那么就可以使用alphaDao = applicationContext.getBean("alphaHibernate",AlphaDao.class);这种方法利用getBean的重载指明了是AlphaDao.class类型,还可以使用强制类型转换(AlphaDao)applicationContext.getBean("alphaHibernate")
-   		AlphaDao alphaDao = applicationContext.getBean(AlphaDao.class);
-   		System.out.println(alphaDao.select());
+  	@Test
+    	public void testApplicationContext(){
+    		System.out.println(applicationContext);
+    
+    		//从容器获取扫描到的bean,使用接口或者实现类都可以,如果填写AlphaDao.class,就会按照实现接口的类扫描bean,如果在AlphaDaoHibernate和AlphaDaoMybatis都仅使用了@Repository注解
+    		//那么就会报错org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'com.nowcoder.community.dao.AlphaDao' available: expected single matching bean but found 2: alphaDaoHibernateImpl,alphaDaoMybatisImpl
+    		//提示不确定到底哪个bean才是被指出的
+    		//这样的话,有两个解决方法,要么直接将参数改为AlphaDaoMybatisImpl.class,要么直接在某一个注解上添加@Primary
+    		//这就显示出了Spring IoC的优势,控制反转,也就是我这边真正的逻辑代码根本不用动,我有业务拓展需求,比如将Hibernate替换为Mybatis技术栈,我并不需要修改本java文件的代码,只要让Mybatis重写一个AlphaDao的实现类,然后给Mybatis设置一个@Primary注解即可
+    		// 因为我们这个文件依赖的是接口AlphaDao,而不是具体的实现类,调用方和实现类之间没有什么关系,这也就是依赖注入的实现
+    		// 但这样会带来新的问题,比如我仍需要Hibernate在一部分模块工作,那么一方面可以直接使用alphaDao = applicationContext.getBean(AlphaDaoHibernateImpl.class);
+    		// 另一方面可以使用@Repository("alphaHibernate")直接给予bean一个名字,那么就可以使用alphaDao = applicationContext.getBean("alphaHibernate",AlphaDao.class);这种方法利用getBean的重载指明了是AlphaDao.class类型,还可以使用强制类型转换(AlphaDao)applicationContext.getBean("alphaHibernate")
+    		AlphaDao alphaDao = applicationContext.getBean(AlphaDao.class);
+    		System.out.println(alphaDao.select());
   //		alphaDao = applicationContext.getBean(AlphaDaoHibernateImpl.class);
   		alphaDao = applicationContext.getBean("alphaHibernate",AlphaDao.class);
   		System.out.println(alphaDao.select());
@@ -553,47 +552,47 @@
 - JSON就可以起到衔接的作用,尤其是在异步请求当中,客户端要求返回一个是否验证成功的结果用这种方式就很方便
 
 - ```java
-  @RequestMapping(path = "/emp",method = RequestMethod.GET)
-     //如果要返回的响应是JSON的话,那么一定要加上ResponseBody,否则会认为返回的是html
-     //dispatcherServlet调用这个方法的时候,一看加了@ResponseBody注解,并且声明返回的是这样的HashMap类型,他会自动转换java对象为JSON字符串
-     @ResponseBody
-     public Map<String,Object> getEmp(){
-         Map<String, Object> map = new HashMap<>();
-         map.put("name","张三");
-         map.put("age",24);
-         map.put("salary",8000.00);
-         return map;
-     }
-   
-     //还有有时候可能返回的不是一个员工,而是一组员工,也就是返回多个结构的情况
-     @RequestMapping(path = "/emps",method = RequestMethod.GET)
-     //如果要返回的响应是JSON的话,那么一定要加上ResponseBody,否则会认为返回的是html
-     //dispatcherServlet调用这个方法的时候,一看加了@ResponseBody注解,并且声明返回的是这样的HashMap类型,他会自动转换java对象为JSON字符串
-     @ResponseBody
-     public List<Map<String,Object>> getEmps(){
-   
-         List<Map<String,Object>> list = new ArrayList<>();
-   
-         Map<String, Object> map = new HashMap<>();
-         map.put("name","张三");
-         map.put("age",24);
-         map.put("salary",8000.00);
-         list.add(map);
-   
-         Map<String, Object> map1 = new HashMap<>();
-         map1.put("name","李四");
-         map1.put("age",24);
-         map1.put("salary",8000.00);
-         list.add(map1);
-   
-         Map<String, Object> map2 = new HashMap<>();
-         map2.put("name","王二麻子");
-         map2.put("age",24);
-         map2.put("salary",8000.00);
-         list.add(map2);
-   
-         return list;
-     }
+  	@RequestMapping(path = "/emp",method = RequestMethod.GET)
+      //如果要返回的响应是JSON的话,那么一定要加上ResponseBody,否则会认为返回的是html
+      //dispatcherServlet调用这个方法的时候,一看加了@ResponseBody注解,并且声明返回的是这样的HashMap类型,他会自动转换java对象为JSON字符串
+      @ResponseBody
+      public Map<String,Object> getEmp(){
+          Map<String, Object> map = new HashMap<>();
+          map.put("name","张三");
+          map.put("age",24);
+          map.put("salary",8000.00);
+          return map;
+      }
+    
+      //还有有时候可能返回的不是一个员工,而是一组员工,也就是返回多个结构的情况
+      @RequestMapping(path = "/emps",method = RequestMethod.GET)
+      //如果要返回的响应是JSON的话,那么一定要加上ResponseBody,否则会认为返回的是html
+      //dispatcherServlet调用这个方法的时候,一看加了@ResponseBody注解,并且声明返回的是这样的HashMap类型,他会自动转换java对象为JSON字符串
+      @ResponseBody
+      public List<Map<String,Object>> getEmps(){
+    
+          List<Map<String,Object>> list = new ArrayList<>();
+    
+          Map<String, Object> map = new HashMap<>();
+          map.put("name","张三");
+          map.put("age",24);
+          map.put("salary",8000.00);
+          list.add(map);
+    
+          Map<String, Object> map1 = new HashMap<>();
+          map1.put("name","李四");
+          map1.put("age",24);
+          map1.put("salary",8000.00);
+          list.add(map1);
+    
+          Map<String, Object> map2 = new HashMap<>();
+          map2.put("name","王二麻子");
+          map2.put("age",24);
+          map2.put("salary",8000.00);
+          list.add(map2);
+    
+          return list;
+      }
   ```
 
 ##### Spring+Spring MVC题目
@@ -614,7 +613,7 @@
 - `source C:/workspace/Coder/Java_Codes/communityProjectData/community-init-sql-1.5/init_schema.sql` 
 - `source C:/workspace/Coder/Java_Codes/communityProjectData/community-init-sql-1.5/init_data.sql`
 - 注意反斜杠,注意上面两个数据导入有先后顺序
-- `show tables`
+-  `show tables`
 
 #### 核心组件
 
@@ -746,6 +745,10 @@
 
   - 可以看出实际上我们并没有将entity内的DiscussPost的成员变量的名字和表的字段设置为相同的,但是通过配置上面所说的配置,我们就是实现了驼峰式命名和表的字段的智能匹配(==**问:如果没有配置匹配这个配置,如何实现自动的匹配呢?**==)
 
+##### ==为什么在调用UserMapper的insertUser之后,insertUser(User user)的参数user对象也可以自动拥有id呢?==
+- 一方面因为insert语句用的是明确指定插入列的列表的写法,同时没有指定id,所以MySQL会自动生成id
+- 同时Mybatis的xml对应的sql中指定了keyProperty="id",mybatis会自动回填id到参数user中
+
 ##### Mybatis调试技巧
 
 - Mapper配置文件xml是比较容易出错的
@@ -770,7 +773,7 @@
 - (**模板引擎**)绝对路径,没什么歧义就可以直接这么写,但是如果是相对路径,开发静态页面时可能是这样的关系,但是引入动态的项目中的话,可能会发生一些变化,但是可以通过thymeleaf的语法来处理
 
   - ```html
-    <link rel="stylesheet" th:href="@{/css/global.css}" />
+    	<link rel="stylesheet" th:href="@{/css/global.css}" />
     ```
 
   - **上面的语法就可以让thymeleaf去static下去找这个资源,就不会产生歧义,一般以后相对路径的资源,比如css,js都这么处理**
@@ -796,6 +799,7 @@
 ##### 解释:为什么原本应该将page对象也通过model.addAttribute("discussPosts",discussPosts);添加进model,但是其实无需这么做的原因
 
 - ==首先我们知道,在Spring MVC框架之中,方法的参数其实都是由DispatcherServlet帮我做初始化的,这个Page也可以初始化,并且数据也是由dispatcherServlet注入来的,dispatcherServlet除了帮我们做了这些以外,还会自动的帮我们把Page类型对象装入Model中,所以我们直接可以在thymeleaf中访问page对象了==
+- 传入Page page,只要是entity包下的实体类型,一个java bean(并不是由Spring管理的bean)声明在参数当中,最终Spring MVC都会把这个java bean放在Model里,就可以直接在页面获取
 
 ##### 解析Thymeleaf的某个语法
 
@@ -822,15 +826,10 @@
 - > 请求的资源现在临时从不同的 URI 响应请求。由于这样的重定向是临时的，客户端应当继续向原有地址发送以后的请求。只有在Cache-Control或Expires中进行了指定的情况下，这个响应才是可缓存的
 
 - 比如删除操作之后,我们一般返回都应该是html页面,那删除之后我们应该返回什么呢,一般是返回列表显示那个页面(让客户端看到列表里没有这个了),也就是浏览器请求删除,服务器响应返回查询页面返还给浏览器
-
 -  但像上面所说的方法其实并不好,本来删除和查询是两个独立的操作,现在就依赖在一起了,因为至少在删除的Controller之后要返回一个另一个查询模块的ModelAndView
-
 - 我们可以利用重定向,也就是说浏览器删除操作之后,服务器并不给返回一个页面,而是返回一个建议(状态码302),浏览器就会知道服务器并不想返回一个网页,而是希望浏览器访问另一个页面,这个返回的响应还会带一个建议访问的网址,浏览器会自主的去访问
-
 - 也就是说客户端变成了分两次请求去服务端,这两次请求也是彼此独立的,这就是重定向的价值
-
 - 项目中比较常用重定向的地方,比如注册后返回登录页面
-
 - 总之就是低耦合的方式实现功能之间的跳转
 
 #### 最常见的几种状态码
@@ -1081,71 +1080,71 @@
   ```
 
 - ```java
-  // 返回值可以设置为整数,表示返回不同的状态,也可以返回String,也可以返回自定义的类,这个方法返回各种错误信息,密码不能为空,账号不能为空等错误信息
-     public Map<String,Object> register(User user){
-         Map<String,Object> map = new HashMap<>();
-   
-         // 判断空值
-         // 如果用户对象为空,那么肯定是程序出现了问题了
-         if(user == null){
-             throw new IllegalArgumentException("参数不能为空");
-         }
-         // 如果用户名是空的,不能报错,账号是空的只是业务上的漏洞,但不是程序的错误,我们就把信息封装起来返回给客户端,告诉其这样是不对的
-         if(StringUtils.isBlank(user.getUsername())){
-             map.put("usernameMsg","账号不能为空");
-             return map;
-         }
-         if(StringUtils.isBlank(user.getPassword())){
-             map.put("passwordMsg","密码不能为空");
-             return map;
-         }
-         if(StringUtils.isBlank(user.getEmail())){
-             map.put("emailMsg","邮箱不能为空");
-             return map;
-         }
-   
-         // 是否已存在业务逻辑判断
-         // 验证账号
-         User u = userMapper.selectByName(user.getUsername());
-         if(u != null){
-             map.put("usernameMsg","该账号已存在");
-             return map;
-         }
-         // 验证邮箱
-         u = userMapper.selectByEmail(user.getEmail());
-         if(u != null){
-             map.put("emailMsg","该邮箱已存在");
-             return map;
-         }
-   
-         // 如果上面全通过了,那么意味着确实用户可以成功注册了
-         // 注册用户
-         // 先随机生成一个字符串salt,用substring做一个五位的长度限制
-         user.setSalt(CommunityUtil.generateUUID().substring(0,5));
-         user.setPassword(CommunityUtil.md5(user.getPassword()+user.getSalt()));
-         // 普通用户
-         user.setType(0);
-         // 尚未激活状态
-         user.setStatus(0);
-         user.setActivationCode(CommunityUtil.generateUUID());
-         user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png",new Random().nextInt(1000)));
-         user.setCreateTime(new Date());
-         // 调用insert语句之后,user对象里面就有id了,mybatis自动的生成id的回填
-         // 原因:因为我们配置了mybatis.configuration.useGeneratedKeys=true,使用自动生成id的机制,然后id的字段对应着哪个属性就会给那个属性自动的回填
-         userMapper.insertUser(user);
-   
-         // 激活邮件
-         Context context = new Context();
-         context.setVariable("email",user.getEmail());
-         // 要求激活路径应该是这样的http://localhost:8080/community/activation/101/activateCode
-         String url = domain + contextPath + "/activation/" + user.getId() + "/" + user.getActivationCode();
-         context.setVariable("url",url);
-         String content = templateEngine.process("/mail/activation",context);
-         mailClient.sendMail(user.getEmail(),"牛客网注册激活邮件",content);
-   
-         // 最后返回的map为空就代表没有问题
-         return map;
-     }
+   // 返回值可以设置为整数,表示返回不同的状态,也可以返回String,也可以返回自定义的类,这个方法返回各种错误信息,密码不能为空,账号不能为空等错误信息
+      public Map<String,Object> register(User user){
+          Map<String,Object> map = new HashMap<>();
+    
+          // 判断空值
+          // 如果用户对象为空,那么肯定是程序出现了问题了
+          if(user == null){
+              throw new IllegalArgumentException("参数不能为空");
+          }
+          // 如果用户名是空的,不能报错,账号是空的只是业务上的漏洞,但不是程序的错误,我们就把信息封装起来返回给客户端,告诉其这样是不对的
+          if(StringUtils.isBlank(user.getUsername())){
+              map.put("usernameMsg","账号不能为空");
+              return map;
+          }
+          if(StringUtils.isBlank(user.getPassword())){
+              map.put("passwordMsg","密码不能为空");
+              return map;
+          }
+          if(StringUtils.isBlank(user.getEmail())){
+              map.put("emailMsg","邮箱不能为空");
+              return map;
+          }
+    
+          // 是否已存在业务逻辑判断
+          // 验证账号
+          User u = userMapper.selectByName(user.getUsername());
+          if(u != null){
+              map.put("usernameMsg","该账号已存在");
+              return map;
+          }
+          // 验证邮箱
+          u = userMapper.selectByEmail(user.getEmail());
+          if(u != null){
+              map.put("emailMsg","该邮箱已存在");
+              return map;
+          }
+    
+          // 如果上面全通过了,那么意味着确实用户可以成功注册了
+          // 注册用户
+          // 先随机生成一个字符串salt,用substring做一个五位的长度限制
+          user.setSalt(CommunityUtil.generateUUID().substring(0,5));
+          user.setPassword(CommunityUtil.md5(user.getPassword()+user.getSalt()));
+          // 普通用户
+          user.setType(0);
+          // 尚未激活状态
+          user.setStatus(0);
+          user.setActivationCode(CommunityUtil.generateUUID());
+          user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png",new Random().nextInt(1000)));
+          user.setCreateTime(new Date());
+          // 调用insert语句之后,user对象里面就有id了,mybatis自动的生成id的回填
+          // 原因:因为我们配置了mybatis.configuration.useGeneratedKeys=true,使用自动生成id的机制,然后id的字段对应着哪个属性就会给那个属性自动的回填
+          userMapper.insertUser(user);
+    
+          // 激活邮件
+          Context context = new Context();
+          context.setVariable("email",user.getEmail());
+          // 要求激活路径应该是这样的http://localhost:8080/community/activation/101/activateCode
+          String url = domain + contextPath + "/activation/" + user.getId() + "/" + user.getActivationCode();
+          context.setVariable("url",url);
+          String content = templateEngine.process("/mail/activation",context);
+          mailClient.sendMail(user.getEmail(),"牛客网注册激活邮件",content);
+    
+          // 最后返回的map为空就代表没有问题
+          return map;
+      }
   ```
 
 - 整个注册Service的业务逻辑就是上面的代码,大体设计是返回一个Map对象,map里面装的是键值对,解释为`消息类型,消息内容`,比如`usernameMsg,"用户名已存在"`,而当最后map为空时就代表整个流程走完了,注册成功,所有的注册业务逻辑都是在Service实现的,包括发送激活邮件,Controller装配Service后,就直接调用Controller作用就是将注册请求表单的信息(包括username,password,email,都是通过register模板的三个输入框的name属性设置同名来完成自动注入到Controller方法的参数User中的)
@@ -1422,7 +1421,7 @@
 - cookie的key value都必须要是字符串,所以要toString
 
   - ```java
-    Cookie cookie = new Cookie("ticket", map.get("ticket").toString());
+     Cookie cookie = new Cookie("ticket", map.get("ticket").toString());
     ```
 
 ##### 如何在Html页面获取到Model对象的值或路径映射的方法中的参数的值?
@@ -1430,8 +1429,8 @@
 - 首先分析一个问题
 
 - ```html
-  				<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.username:''}" id="username" name="username" placeholder="请输入您的账号!" required>
-    
+  							<input type="text" th:class="|form-control ${usernameMsg!=null?'is-invalid':''}|" th:value="${user!=null?user.username:''}" id="username" name="username" placeholder="请输入您的账号!" required>
+        
   ```
 
 - 上面是注册页面的账号输入框,因为我们在Controller下的register方法写了如下代码
@@ -1814,3 +1813,640 @@
 ##### thymeleaf是如何实现和请求处理Controller方法的参数映射的?
 
 - **通过在html文件的标签配置`<input type="file" th:class="|custom-file-input ${error!=null?'is-invalid':''}|" id="head-image" name="headerImage" lang="es" required="">`的name属性和Controller方法的`public String uploadHeader(MultipartFile headerImage, Model model){`的参数名相同即可**
+
+### 2.7 检查登录状态
+
+- 开发到目前阶段的代码有一个问题,**就是如果我没有登录的话,确实头部导航是没有个人信息等选项的,但是如果一个人知道请求的功能的路径,比如`localhost:8080/community/user/setting`原本没有用户登录,但是却可以访问到个人设置页面,这是不太正确的**
+- 所以说不让用户看到这个功能也不完善,要让用户无论如何也访问不到他没权限访问的路径才对
+- 所以说要在服务端有一个判断,登录了可以访问,没登录就拒绝(将来很多功能都要用到这个,所以想到应该使用拦截器实现)
+- 拦截器如何使用是已经知道了,这次变化一下,用一个也是工作中比较常见的应用方式,但是没有什么新的语法,只是一个使用习惯而已
+- 有时候,拦截器拦截哪些路径,我不希望在配置类中去指定,我希望在一个Controller方法上加上一个注解,加上注解的拦截,不加注解的不拦截
+
+##### 如何定义一个指定方法拦截与不拦截的注解,还有怎么去识别当前拦截的方法有没有这个注解?
+
+- 如果想自己定义一个注解,我们需要用元注解定义我们的注解,常用的元注解有四个
+- `@Target` 用来声明自定义的注解写在什么位置,可以作用在什么类型上(作用在类上,方法上,属性上)
+- `@Retention` 用来声明自定义注解保留的时间,有效的时间(编译时有效,运行时有效)
+- `@Document` 用来声明自定义注解,在生成文档的时候,要不要把这个注解也带上去
+- `@Inherited` 用于继承,一个子类继承父类,父类有一个自定义注解,那么我子类要不要把这个继承下来
+- 总之**自定义一个注解,前两个是一定要用的**
+
+##### 利用元注解自定义注解之后,如何在程序运行时读取到这个注解呢?
+
+- 通过**反射**,通过反射Method对象
+
+- `Method.getDeclaredAnnotations()`获取这个方法之上的所有注解,从中找是否有我们需要的
+
+- 或者`Method.getAnnotation(Class<T> annotationClass)` 尝试获取这个类型的注解
+
+  - ```java
+    method.getAnnotation(LoginRequired.class);
+    ```
+
+- **接下来我们就使用自定义注解的方式使用拦截器,检查登录状态问题**
+
+#### 开发流程
+
+- 在项目下创建annotation包,然后创建Annotation注解
+
+- 首先明确这个注解的作用是:用于标识方法需不需要在登录的状态下才可以访问,**主要起到的就是标识作用**
+
+- ```java
+  // 指明这个注解用于描述方法
+  @Target(ElementType.METHOD)
+  // 指定注解生效的时间,程序运行时有效
+  @Retention(RetentionPolicy.RUNTIME)
+  // 注解里面什么都不需要写,只起到标识的作用,打上这个标记那就需要登录才可以访问
+  public @interface LoginRequired {}
+  ```
+  
+- 目前有三个`UserController`的请求需要限制登陆以后才可以访问,一个是`/setting`,一个是`/upload`,`/updatePassword`
+
+- 下面就用拦截器尝试拦截有`@LoginRequired`的方法,拦截到方法以后就判断登陆与否,登陆了就没事,没登录就拒绝
+
+- ```java
+  @Component
+  public class LoginRequiredInterceptor implements HandlerInterceptor {
+  
+      @Autowired
+      private HostHolder hostHolder;
+  
+      // 在请求最初判断登陆与否
+      // 写好之后还要在配置类中配置,就算是对所有请求路径都要拦截也应该配置一下,因为至少要排除对静态资源的拦截
+      @Override
+      public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+          // 尝试获取用户
+          // Object handler参数是我们拦截的目标,要判断这个目标是不是方法,是方法才拦截
+          // 通过SpringMVC提供的一个类型HandlerMethod来判断,如果说拦截到的是一个方法的话,那么Object handler这个对象将是这个类型
+          if(handler instanceof HandlerMethod){
+              // 强制转型,方便使用HandlerMethod类的方法
+              HandlerMethod handlerMethod = (HandlerMethod)handler;
+              Method method = handlerMethod.getMethod();
+              // 然后在方法对象上去取注解,按照指定类型取注解,没有全部获取
+              LoginRequired loginRequired = method.getAnnotation(LoginRequired.class);
+              // 当前方法需要登录,但是User又没有被服务器持有(就是没登录),那么就不可以访问
+              if(loginRequired != null && hostHolder.getUser() == null){
+                  // 利用response对象进行重定向到login页面,这个方法是接口声明的,所以不能像Controller随便return一个模板
+                  // 重定向的路径需要配置,一种办法可以导入配置文件的domain等配置组合,另一种办法可以直接从request中获取
+                  response.sendRedirect(request.getContextPath()+"/login");
+                  // return false拒绝之后的所有请求
+                  return false;
+              }
+          }
+          return true;
+      }
+  }
+  ```
+
+- 然后仍然需要在配置类进行配置,这里可能有一个疑问
+
+##### 为什么这个拦截器原本目的就是对所有请求的方法进行判断是否有LoginRequired注解,那为什么还需要配置呢?
+
+- 写好之后还要在配置类中配置,就算是对所有请求路径都要拦截也应该配置一下,因为至少要排除对静态资源请求的拦截
+
+- ```java
+  registry.addInterceptor(loginRequiredInterceptor).excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+  
+  ```
+
+## 3 项目进阶
+
+### 3.1 过滤敏感词
+
+#### 前缀树
+
+- Trie,字典树,查找树
+- 特点:查找效率高,消耗内存大(空间换时间)
+- 应用:字符串检索,词频统计(统计哪个词出现的频率最高),字符串排序
+- 前缀树的根节点不包括任何字符
+- 除了根节点以外的每个节点只包含一个字符
+- 从根节点到某一个节点经过的路径上的节点的字符连接起来就是字符串
+- 每个节点所有的子节点包含的字符不同
+
+#### 敏感词过滤器
+
+- 定义前缀树
+- 根据敏感词,初始化前缀树
+- 编写过滤敏感词的方法
+- 实现方法:比如用String的replace()方法一遍一遍的对用户发布的文章进行replace,但是敏感词肯定不止一个,这么一次循环一个敏感词,多次的去替换,非常的耗时
+- 我们会采用前缀树,自己实现过滤敏感词的算法
+- 检测需要三个指针,第一个指针指向树,第二个指针指向第一个字符,第三个指针指向第一个字符(**因为两个指针才能检测出一个字符串,一个标记开头,一个标记结尾,第一个指针不回头,一直向后走,第二个指针会回来在一个小范围抖动**)
+
+##### 开发流程
+
+- 敏感词的过滤是一个工具
+
+- 先定义好敏感词(可以数据库中,可以文件里)
+
+- **敏感词过滤器的三步流程:上面所说**
+
+- ```java
+  package com.nowcoder.community.util;
+  
+  // 敏感词过滤器
+  // 为了复用方便,所以交给容器来管理
+  
+  import org.apache.commons.lang3.CharUtils;
+  import org.apache.commons.lang3.StringUtils;
+  import org.slf4j.Logger;
+  import org.slf4j.LoggerFactory;
+  import org.springframework.stereotype.Component;
+  
+  import javax.annotation.PostConstruct;
+  import java.io.BufferedReader;
+  import java.io.InputStream;
+  import java.io.InputStreamReader;
+  import java.util.HashMap;
+  import java.util.Map;
+  
+  @Component
+  public class SensitiveFilter {
+  
+      private static final Logger logger = LoggerFactory.getLogger(SensitiveFilter.class);
+  
+      // 统一替换得常量,替换符
+      private static final String REPLACEMENT = "***";
+  
+      // 第二步:初始化前缀树
+  
+      // 根节点
+      private TreeNode rootNode = new TreeNode();
+  
+      // 初始化工具,就是首次访问到这个工具的时候,自动就把这个树初始化好,而且不需要初始化多次,只需一次即可
+      // PostConstruct这个注解表明这是一个初始化方法,在容器实例化这个bean以后,在调用这个SensitiveFilter构造器之后,这个方法就会被自动的调用
+      // Spring的这个bean,是在服务启动的时候被实例化的,所以在服务启动之后,这个方法就会被调用,树形结构结构好了,所以在init()方法里完成初始化树的编写是比较合理的
+      @PostConstruct
+      public void init(){
+          // 有多种方法去读取sensitive-words.txt
+          // this.getClass().getClassLoader()是我要获取类加载器,而类加载器是在类路径下加载资源
+          // 类路径就是编译之后的classes,程序一旦编译,所有的代码包括配置文件都会在这个路径之下
+          // sensitive-words.txt本来就在classes文件下,所以不用写路径,直接写文件名即可
+          try (
+                  InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("sensitive-words.txt");
+                  // 从字节流读文字不太方便 最好转成字符流
+                  // 直接使用 new InputStreamReader(inputStream);也不是很方便,最好是使用一个缓冲流
+                  BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+          ){
+              String keyword;
+              while((keyword = bufferedReader.readLine()) != null){
+  
+                  // 第二步
+                  // 把敏感词添加到前缀树
+                  // 这里的逻辑复杂一些,所以最好封装在一个方法当中
+                  this.addKeyWord(keyword);
+              }
+          } catch (Exception e) {
+              logger.error("加载敏感词文件失败:"+ e.getMessage());
+          }
+      }
+  
+      // 把一个敏感词添加到前缀树对象当中去
+      // 内部使用
+      private void addKeyWord(String keyword){
+          TreeNode tempNode = rootNode;
+          for (int i = 0; i < keyword.length(); i++) {
+              char c = keyword.charAt(i);
+              // 把一个字符挂在当前节点下面
+              TreeNode subNode = tempNode.getSubNode(c);
+              if(subNode == null){
+                  // 初始化子节点
+                  subNode = new TreeNode();
+                  tempNode.addSubNode(c,subNode);
+              }
+              // 到此为止,我们要么找到了一个重复的子节点,要么新建了一个子节点,且子节点对应c字符
+  
+              // 下一层处理
+              // 指针指向子节点,进入下一轮循环
+              tempNode = subNode;
+  
+              // 当某一个字符串被循环结束之后,要在最后一个字符打一个标记
+              //  设置结束标识
+              if(i == (keyword.length() - 1)){
+                  tempNode.setKeyWordEnd(true);
+              }
+          }
+      }
+  
+      // 第三步
+      // 检索过程的实现
+      // 检索前缀树
+      // 传入的是可能含有敏感词的字符串,返回的是过滤之后替换好的字符串
+      public String filter(String text){
+          if(StringUtils.isBlank(text)){
+              return null;
+          }
+          // 指针1指向树,默认指向根
+          // 调用filter之前,整个前缀树已经通过init()方法创建好了
+          // 这个前缀树也是整个项目的前缀树
+          TreeNode tempNode = rootNode;
+          // 指针2
+          int begin = 0;
+          // 指针3
+          int position = 0;
+          // 变长字符串
+          // 结果记录
+          StringBuilder stringBuilder = new StringBuilder();
+  
+          // 从头到尾的检测字符串,可以以指针2或者指针3,一般指针3会先结束,因为不是只循环一趟,指针三也依然是每次都会回来指针2同位置重新循环,所以使用指针三是效率会更高一些
+          // 排除了指针2最后可能要多出一轮循环(讲师这么说)
+          while(position < text.length()){
+              char c = text.charAt(position);
+  
+              // 先不着急做敏感词的判断,先跳过符号
+              // 防止上网的人聪明在穿插一些符号
+              // 单独写一个小方法
+              if(isSymbol(c)){
+                  // 若指针1处于根节点,就将此符号计入结果,让指针2向下走一步
+                  if(tempNode == rootNode){
+                      stringBuilder.append(c);
+                      begin++;
+                  }
+                  // 无论符号位于开头或中间,指针3都要向下走一步
+                  position++;
+                  continue;
+              }
+              // 不是符号
+              // 检查下级节点
+              tempNode = tempNode.getSubNode(c);
+              if(tempNode == null){
+                  // 以begin为开头的字符串,不是敏感词
+                  stringBuilder.append(text.charAt(begin));
+                  // 进入下一个位置
+                  position = ++begin;
+                  // 重新指向根节点
+                  tempNode = rootNode;
+              } else if(tempNode.isKeyWordEnd()){
+                  // 发现了敏感词
+                  // 将begin到position这段的字符串替换掉
+                  stringBuilder.append(REPLACEMENT);
+                  // 进入下一个位置
+                  begin = ++position;
+                  // 重新指向根节点
+                  tempNode = rootNode;
+              }else{
+                  // 是疑似敏感词,但不是敏感词的结尾,继续检查下一个字符
+                  position++;
+              }
+          }
+          // 将指针3到终点,但是2还没有到终点的时候的字符串存入
+          stringBuilder.append(text.substring(begin));
+          return stringBuilder.toString();
+      }
+  
+      // 判断符号方法
+      private boolean isSymbol(Character c){
+          // 这个方法判断这个字符是不是普通字符,如果普通字符返回true,(c<0x2E80 || c>0x9FFF)是东亚的文字范围,在范围内的话我们不认为是符号
+          return !CharUtils.isAsciiAlphanumeric(c) && (c<0x2E80 || c>0x9FFF);
+      }
+  
+      // 开发三步
+      // 定义前缀树
+      // 因为其他估计用不到这个结构,所以设置为private
+      // 定义节点
+      private class TreeNode{
+  
+          // 关键词结束标识
+          private boolean isKeyWordEnd = false;
+  
+          // 描述当前节点子节点
+          // 一个节点的孩子可能是多个,所以用一个map来存,key是下级节点字符,value是子节点
+          private Map<Character,TreeNode> subNodes = new HashMap<>();
+  
+          public boolean isKeyWordEnd() {
+              return isKeyWordEnd;
+          }
+  
+          public void setKeyWordEnd(boolean keyWordEnd) {
+              isKeyWordEnd = keyWordEnd;
+          }
+  
+          // 添加子节点方法,而且不能是直接生成了,不是简单的set了
+          public void addSubNode(Character c,TreeNode node){
+              subNodes.put(c,node);
+          }
+  
+          // 获取子节点,通过key取value
+          public TreeNode getSubNode(Character c){
+              return subNodes.get(c);
+          }
+  
+      }
+  
+  }
+  
+  ```
+
+
+### 3.2 发布帖子
+
+#### 异步请求AJAX
+
+- 当前我的页面不刷新,但是还要访问服务器,服务器还要给我返回一些结果,但是这些结果不是网页
+- 通过服务器返回的结果中的数据,对网页进行一个局部的刷新,通常是给一个提示或更改样式
+- Asynchronous JavaScript and XML (AJAX)
+- 异步的JavaScript和XML
+- 使用AJAX,网页能够将增量更新呈现在页面上,并不需要刷新整个页面
+- 虽然X带表XML,但是目前JSON的使用比XML更普遍
+- mozilla.org有手册
+
+##### 创建一个示例
+
+- 首先导入JSON处理的包,主要有Spring自带的Jackson,FastJSON两种
+- FastJSON更快,所以先导入这个包
+- 利用FastJSON的API二次开发一些方法,供我们的项目用
+- 这个方法主要是给服务器向浏览器返回的JSON数据往往需要包含几部分内容
+
+```java
+    // JSON处理工具,获取JSON字符串
+    // 需要传入 1,编码 2,message提示信息 3,map封装业务数据(更灵活)
+    // 而且有的时候可能1,2,有的时候可能只有1
+    public static String getJSONString(int code, String msg, Map<String,Object> map){
+
+        JSONObject json = new JSONObject();
+        json.put("code",code);
+        json.put("msg",msg);
+        // map需要分散之后把每一个键值对封装进去
+        if(map!=null){
+            // 遍历map有三种方式,遍历key,遍历value,遍历key或value
+            for(String key:map.keySet()){
+                json.put(key,map.get(key));
+            }
+        }
+        return json.toJSONString();
+    }
+    public static String getJSONString(int code, String msg){
+        return getJSONString(code,msg,null);
+    }
+    public static String getJSONString(int code){
+        return getJSONString(code,null,null);
+    }
+
+```
+
+- 然后编写一个测试用例,在AlphaController编写
+
+```java
+    // AJAX示例
+    // 请求的方式设置为POST,通常情况下,页面是要给服务器通过异步的方式提交一些数据,然后服务器保存之后,给浏览器返回提示
+    // 因为是异步请求,我们不会再Controller给浏览器返回网页,返回的是字符串
+    @RequestMapping(path = "/ajax",method = RequestMethod.POST)
+    @ResponseBody
+    // 希望浏览器给我提交一个name,提交一个age
+    public String testAjax(String name,int age){
+        System.out.println(name);
+        System.out.println(age);
+        return CommunityUtil.getJSONString(0,"操作成功!");
+    }
+```
+
+- 然后随便编写一个静态页面,引入JQuery,编写AJAX请求测试用例
+
+```html
+<!--    通过JQuery官网引入,不是本地引入-->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+<script>
+    function send(){
+        // 可以使用jquery的 $.get() $.post() $.ajax() 实现上$.get() $.post()都是$.ajax()简化之后的方法, $.ajax()的配置是相对复杂的
+        $.post(
+            // 三个参数,第一个参数要访问的路径
+            "/community/alpha/ajax",
+            // 写一个js对象,js对象的直接量就是JSON格式
+            // 写出需要向服务器提交的name
+            {"name":"张三","age":"23"},
+            // 还需要一个匿名的回调函数
+            // 服务器给浏览器做出响应以后,浏览器得到这个响应之后,会调用这个回调方法,并把服务器返回的数据传给这个方法
+            // data就是服务器返回的数据,是个字符串
+            function(data){
+                // 测试data是不是String类型
+                console.log(typeof(data));
+                console.log(data);
+
+                // 把字符串把这个JSON转换为JS对象,用JQuery很方便
+                // 通过js的对象data接收服务器数据JSON转化之后的js对象
+                // 经过这句话的执行,data就变成了js对象,从string类型转换为了js对象Object类型
+                data = $.parseJSON(data);
+                console.log(typeof(data));
+                console.log(data.code);
+                console.log(data.msg);
+            }
+        );
+    }
+</script>
+```
+
+- 然后就可以在浏览器访问`localhost:8080/community/html/ajax-demo.html`来访问这个页面来点击按钮,(**注意此处并不是访问编写的Controller,Controller只是用来返回给浏览器一个JSON字符串响应,该Controller用的是@ResponseBody注解,且本身的作用是处理这个静态页面通过POST请求提交的数据,直接访问该Controller的请求路径/ajax自然也是无法访问到的,会报错,因为直接访问是get访问**)
+- 
+
+### 3.2 发布帖子功能
+
+- 这个功能就用到了AJAX和之前写的敏感词过滤工具
+- 首先开发DAO,写SQL
+- 然后写Service业务逻辑
+
+```java
+    // 添加帖子业务
+    public int addDiscussPost(DiscussPost discussPost){
+        if(discussPost == null){
+            throw new IllegalArgumentException("参数不能为空!");
+        }
+        // title和content是需要做敏感词过滤的,同时最好把<script></script>这种标签也给去掉,我们只希望浏览器认为这是普通的文字,而不希望认为这是html标签
+        // 转义html标记,利用Spring MVC自带的一个工具即可
+        discussPost.setTitle(HtmlUtils.htmlEscape(discussPost.getTitle()));
+        discussPost.setContent(HtmlUtils.htmlEscape(discussPost.getContent()));
+        
+        // 过滤敏感词
+        discussPost.setTitle(sensitiveFilter.filter(discussPost.getTitle()));
+        discussPost.setContent(sensitiveFilter.filter(discussPost.getContent()));
+        
+        return discussPostMapper.insertDiscussPost(discussPost);
+    }
+    
+```
+
+- 下一步开发视图层,页面也要做一些处理,这次的页面,就不是随便配一个表单了,要用一个异步的方式,要写一些js代码
+
+#### 为什么这次不需要修改form标签,不需要加上action?
+
+- 而且这一次的功能要注意,这次不同于以前修改form标签的action和method,因为这次我们是想通过异步请求,在不刷新页面的前提下完成浏览器和服务器的交互,所以代码在index页面是没有什么改动的,因为我们并不是用过模板引擎调用返回html,而只是给浏览器返回JSON格式的字符串
+
+```js
+$(function(){
+	// 发布按钮触发的逻辑
+	$("#publishBtn").click(publish);
+});
+
+function publish() {
+	// 点击发布按钮后,发布界面隐藏
+	$("#publishModal").modal("hide");
+
+	// 获取标题和内容
+	var title = $("#recipient-name").val();
+	var content = $("#message-text").val();
+	// 发送异步请求
+	$.post(
+		CONTEXT_PATH + "/discuss/add",
+		{"title":title,"content":content},
+		// 回调函数,在这里写逻辑能保证是在接收到服务器返回的响应JSON数据后调用,并且服务器的响应JSON已经存在了data中
+		function(data){
+			data = $.parseJSON(data);
+			// 在提示框当中显示返回的消息
+			$("#hintBody").text(data.msg);
+			// 在提示框中返回显示消息以后,要显示提示框
+			// 显示后,两秒后自动隐藏提示框
+			$("#hintModal").modal("show");
+			setTimeout(function(){
+				$("#hintModal").modal("hide");
+				// 如果说我们返回的结果OK,表示数据在服务端已经写入数据库了,那我就要把当前的页面刷新一下
+				// 如果说添加失败了,就不刷新页面了,但是无论成功失败都给了提示
+				if(data.code == 0){
+					window.location.reload();
+				}
+			}, 2000);
+		}
+	)
+	
+}
+```
+
+### 3.3 帖子详情
+
+#### 如何在查询帖子相关数据时,同时获得userId对应的username(在另一个表)?
+- 我们在页面上显示帖子的作者,肯定不是希望显示用户的userId,此时有两种解决办法:
+- 一种是我们可以在Mapper中实现查询的时候写一个关联查询,下面是原本的SQL
+  - ```sql
+    <select id="selectDiscussPostById" resultType="DiscussPost">
+        SELECT <include refid="selectFields"></include>
+        FROM discuss_post
+        WHERE id=#{id}
+    </select>
+    ```
+- 修改之后的SQL
+  - ```sql
+    <select id="selectDiscussPostAndUserNameById" resultType="DiscussPostAndUserName">
+        SELECT u.username, d.id, d.user_id, d.title, d.content, d.type, d.status, d.create_time, d.comment_count, d.score
+        FROM discuss_post AS d,user AS u
+        WHERE u.id = d.user_id
+        AND d.id=#{id}
+    </select>
+    ```
+
+- 创建一个新的实体对象DiscussPostAndUserName接收即可
+- **第二种方法**:也可以在DiscussPost中获取userId,然后在DiscussPostController中注入UserService通过userId查找username
+- 第一种方法使用表联结的方法查,在数据库中进行数据的获取肯定要快得多,但是容易出现冗余,就是有的方法并不需要联结的查询,要么就要多写一个实例类和Mapper方法
+- 第二种方法的缺点是肯定速度要慢,但是这样不容易冗余,效率稍微低一点,后面会讲Redis,像这种有效率影响的数据会缓存到Redis中解决性能问题
+
+### 3.4 事务管理
+
+#### 什么是事务
+- 事务是由N步数据库操作序列组成的逻辑执行单元，这系列操作要么全执行，要么全放弃执行。(就是说我们在执行数据库操作的时候,是以某一个业务为单元的,一项业务可能访问数据库多次,要保证这个业务的完整性)
+
+#### 事务的特性（ACID）
+- 原子性（Atomicity）：事务是应用中不可再分的最小执行体。
+- 一致性（Consistency）：事务执行的结果，须使数据从一个一致性状态，变为另一个一致性状态。(数据需要满足数据库的约束,包括唯一性月约束,非空约束等等,在改变之后依然要满足)
+- 隔离性（Isolation）：各个事务的执行互不干扰，任何事务的内部操作对其他的事务都是隔离的。(每个线程都是彼此不会干扰,是对并发的特性)
+- 持久性（Durability）：事务一旦提交，对数据所做的任何改变都要记录到永久存储器中。(就是存在硬盘上这种永久存储器中,而不是内存之中)
+
+#### 事务的隔离性
+
+##### 常见的并发异常(3.13视频)
+- 第一类丢失更新(某一个事务的回滚.导致另外一个事务已更新的数据丢失了)、第二类丢失更新(某一个事务的提交,导致另外一个事务已更新的数据丢失)。
+- 脏读(某一个事务读取了另一个事务未提交的数据)、不可重复读(某一个事务对同一个数据前后读取的结果不一致)、幻读(某一个事务,对同一个表前后查询到的行数不一致,有点类似于不可重复读,但是幻读是我查询多条数据返回的行数不一致,不可重复读是查一条数据不一致)。
+- ![](https://raw.githubusercontent.com/CodeNovice2017/ImageRepository/master/img/20200916201123.png)
+
+##### 常见的隔离级别
+- Read Uncommitted：读取未提交的数据。(极少情况会用,基本啥也没干)
+- Read Committed：读取已提交的数据。(对数据完整性要求没有那么高,但性能要求很高)
+- Repeatable Read：可重复读。(在绝大部分互联网应用当中,幻读是可以接受的,因为幻读是查询多行数据,往往是统计数据时会出现幻读,比如统计多少帖子,这个一方面可以通过业务去规避,比如把统计都放在后半夜,极少有用户的时候)
+- Serializable：串行化。(所有异常都不会出现,但是就是加锁,并发性能是最低的,最安全,一般银行会用)
+
+#### 实现机制(数据库保障数据的机制的实现)
+##### 悲观锁（数据库自带的实现机制都是悲观锁）(看待问题非常悲观,认为一旦并发就一定会有问题,既然一定会有那就提前对数据加锁)
+- 共享锁（S锁）(加了共享锁之后能读,但不能改)
+  - 事务A对某数据加了共享锁后，其他事务只能对该数据加共享锁，但不能加排他锁。
+- 排他锁（X锁）(其他事务不能读也不能改)
+  - 事务A对某数据加了排他锁后，其他事务对该数据既不能加共享锁，也不能加排他锁。
+
+
+##### 乐观锁（自定义,自己去实现）(总是很乐观看待问题,即使并发了通常也不会有问题,我该读读该计算计算,当我都操作完了要更改数据的时候,这个时候去看一下这个数据变没变,如果这个数据变了,那么我知道有人改了,我应该放弃我的这次操作,否则没人改,我就提交我的数据)
+- 加上版本号、时间戳等(反正就是能够识别这个数据变没变)
+  - 在任何人更新数据前，都要检查版本号是否发生变化。若变化则取消本次更新，否则就更新数据（版本号+1）
+
+#### 开发:Spring对事务的管理有一定的支持
+- Spring有一个模块叫Spring Data Access,官方手册有讲,第一个小节就是transaction management事务管理
+- Spring的事务管理也一直是Spring引以为豪的特性,无论底层选的是什么数据库(甚至是MongoDB,Redis的NoSQL数据库),对任何数据库做事务管理的时候,API都是统一的,对开发者都是透明的,一套API就可以管理所有数据库的事务
+- **声明式事务**(简便)
+  - 通过XML配置，声明某方法的事务特征。
+  - 通过注解，声明某方法的事务特征。
+- **编程式事务**(也有学习的必要,比如有一个业务逻辑非常复杂,涉及到十步数据库的操作,而我们需要控制事务只是中间的五步,其他不需要控制,那么此时是一个方法十步操作,此时是没有办法用声明式的,因为把注解加到方法前的方式会对整个方法内的操作都控制了事务,没有办法局部)
+  - 通过 `TransactionTemplate` 管理事务，并通过它执行数据库的操作
+
+### 3.5 显示评论
+#### 数据层
+- 根据实体查询一页评论数据。
+- 根据实体查询评论的数量。
+#### 业务层
+- 处理查询评论的业务。
+- 处理查询评论数量的业务。
+#### 表现层
+- 显示帖子详情数据时，
+- 同时显示该帖子所有的评论数据。
+
+#### 项目comment评论表的解析
+- 为了实现对帖子的评论,和对评论的评论统一用一张表,创建了两个entity_type和entity_id字段
+- target_id记录对评论的评论时,是对谁的评论
+
+##### ==怎么实现的一张comment表,既可以查出是哪一个帖子的评论,还可以查出是哪一个评论的评论呢?==
+-   要搞懂表的逻辑,通过帖子的评论是discuss_post表中的id和comment表的entity_id相同找出的,同时这也是代表一个帖子回复的数量
+-   评论的评论时通过comment表自己找出的,entity_type=1限制为是评论的评论,然后通过entity_id和comment表的id来判断是确定是comment表中哪一个帖子的评论的评论
+-   entity_id有没有可能出现comment的id(评论的评论)和discuss_post的id(帖子的评论)相冲突呢?不会,因为还需要判断entity_type
+-   最后通过entity_type=1,和target_id不为0来判断是评论的评论中有指向的评论,entity_id和comment表的id相同来判断是哪一个帖子的评论的评论
+
+#### 代码流程 
+- 主要编写了`DiscussPostController` `discusspost-detail.html`(其余的比如Service DAO都是比较简单的逻辑了)
+
+### 3.6 添加评论
+
+#### 开发流程
+- 数据库在discuss_post表中冗余了一个count字段专门用于存储帖子评论的数量,可以提高每次打开帖子就要重新在comment表中查询当前entityId=discuss_post表中Id的数量,提高查询的速度,所以新插入帖子的评论时就要同时更新comment_count字段值
+
+##### 理解为什么需要在一个Service调用另一个Service的业务组件?
+- 在帖子DiscussPostService的业务组件加一个更新comment_count评论数的方法
+- ```java
+    public int updateCommentCount(int id,int commentCount){
+        return discussPostMapper.updateCommentCount(id,commentCount);
+    }
+  ```
+- 因为毕竟comment_count是discuss_post表的列,所以编写在DiscussPostService中,而不是编写在CommentService中
+- 然后在CommentService编写评论业务的时候,加上这个业务组件
+- 也就是说Service不止可以依赖自己的Mapper,也可以依赖其他的Service
+- 同时还有一点需求是,**我们需要在一个Service的业务方法下进行事务的管理,那么自然将另一个Service的DML添加到该业务下一同配置时比较合理的**
+- ```java
+    // 增加评论的业务
+    // 这个业务方法包含两个DML数据库操作操作
+    // 所以希望对它进行事务管理,保证这两次操作在一个事务范围之内,要么全成功,要么全失败
+    // 当前整个方法在一个事务范围之内,并不是局部的,所以我们使用声明式事务编程方法
+    @Transactional(isolation = Isolation.READ_COMMITTED,propagation = Propagation.REQUIRED)
+    public int addComment(Comment comment){
+        // 首先要增加评论,那么对页面传入的这个实体,我们需要对内容进行一个过滤,包括Html标签过滤,包括敏感词过滤
+        if(comment == null){
+            throw new IllegalArgumentException("参数不能为空");
+        }
+        // Html标签过滤
+        comment.setContent(HtmlUtils.htmlEscape(comment.getContent()));
+        // 敏感词过滤
+        comment.setContent(sensitiveFilter.filter(comment.getContent()));
+        int rows = commentMapper.insertComment(comment);
+
+        // 更新评论数量
+        // 评论的目标是不一样的,我可以评论给评论,可以评论给帖子,可以评论给其他内容等
+        // 而只有评论给帖子的时候,才需要更新帖子的评论数量
+        if(comment.getEntityType() == ENTITY_TYPE_POST){
+            int count = commentMapper.selectCountByEntity(comment.getEntityType(),comment.getEntityId());
+            discussPostService.updateCommentCount(comment.getEntityId(),count);
+        }
+        return rows;
+    }
+    ```
+
+
+### 3.7 私信列表

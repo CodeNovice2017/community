@@ -28,5 +28,10 @@ public interface DiscussPostMapper {
     DiscussPost selectDiscussPostById(int id);
 
     DiscussPostAndUserName selectDiscussPostAndUserNameById(int id);
+
+    // 数据库在discuss_post表中冗余了一个count字段专门用于存储帖子评论的数量,可以提高每次打开帖子就要重新在comment表中查询当前entityId=discuss_post表中Id的数量
+    // 提高查询的速度
+    // 所以新插入帖子的评论时就要同时更新comment_count字段值
+    int updateCommentCount(int id,int commentCount);
 }
 
