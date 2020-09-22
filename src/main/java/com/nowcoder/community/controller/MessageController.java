@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.util.HtmlUtils;
 
 import java.util.*;
 
@@ -134,6 +133,8 @@ public class MessageController {
     // 异步请求
     @ResponseBody
     public String addLetter(String targetName,String content){
+
+        Integer.valueOf("abc");
 
         User target = userService.findUserByUsername(targetName);
         if (target == null) {

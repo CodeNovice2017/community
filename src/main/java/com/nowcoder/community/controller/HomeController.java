@@ -53,4 +53,11 @@ public class HomeController {
         return "/index";
     }
 
+    // Controller发生异常以后,我统一处理,记录日志之后,我要干嘛呢?我要去到500那个页面,
+    // 但是这个时候使我们人为处理的,我们需要手动的重定向过去,所以我们要把500请求页面的访问给配置一下
+    @RequestMapping(path = "/error" ,method = RequestMethod.GET)
+    public String getErrorPage(){
+        return "/error/500";
+    }
+
 }
