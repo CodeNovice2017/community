@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace要写入UserMapper全路径的名,因为要指出这个配置文件是为哪个Mapper服务的要定好-->
+<mapper namespace="com.nowcoder.community.dao.MessageMapper">
+
+    <sql id="selectFields">
+        id, from_id, to_id, conversation_id, content, status, create_time
+    </sql>
+
+    <sql id="insertFields">
+        from_id, to_id, conversation_id, content, status, create_time
+    </sql>
+
+    <select id="selectConversations" resultType="Message">
+        SELECT <include refid="selectFields"></include>
+        FROM message
+        WHERE id IN
+        (
+            SELECT MAX(id)
+            FROM message
+            WHERE status!=2
+            AND from_id!=1
+            AND (from_id=#{userId} OR to_id=#{userId})
+            GROUP BY conversation_id
+        )
+        ORDER BY id desc
+        LIMIT #{offset},#{limit}
+    </select>
+
+    <select id="selectConversationsCount" resultType="int">
+        SELECT COUNT(m.maxid) FROM
+        (
+        SELECT MAX(id) as maxid
+        FROM message
+        WHERE status!=2
+        AND from_id!=1
+        AND (from_id=#{userId} OR to_id=#{userId})
+        GROUP BY conversation_id
+        ) AS m
+    </select>
+
+    <select id="selectLetters" resultType="Message">
+        SELECT <include refid="selectFields"></include>
+        FROM message
+        WHERE conversation_id=#{conversationId}
+        AND status!=2
+        AND from_id!=1
+        ORDER BY id desc
+        LIMIT #{offset},#{limit}
+    </select>
+
+    <select id="selectLettersCount" resultType="int">
+        select count(id)
+        from message
+        where status != 2
+          and from_id != 1
+          and conversation_id = #{conversationId}
+    </select>
+
+    <select id="selectUnreadLettersCount" resultType="int">
+        select count(id)
+        from message
+        where status = 0
+        and from_id != 1
+        and to_id = #{userId}
+        <if test="conversationId!=null">
+            and conversation_id = #{conversationId}
+        </if>
+    </select>
+
+<!--    增加的时候,id是自增长的,要声明id字段(表的)对应的属性是谁(Message对象的),这样生成id以后会回填id属性,keyProperty="id"-->
+    <insert id="insertLetter" parameterType="Message" keyProperty="id">
+        INSERT INTO message
+        (<include refid="insertFields"></include>)
+        VALUES (#{fromId},#{toId},#{conversationId},#{content},#{status},#{createTime})
+    </insert>
+
+<!--    这里就不能简单的id=的写法了,因为传入的id是多个,是用List传入的,所以要用IN()的语法
+    mybatis允许我们用foreach的标签遍历这个集合,然后拼成一个()里面带有条件的形式-->
+    <update id="updateStatus">
+        UPDATE message SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
