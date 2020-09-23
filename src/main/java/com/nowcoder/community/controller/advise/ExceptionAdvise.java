@@ -52,7 +52,6 @@ public class ExceptionAdvise {
             httpServletResponse.sendRedirect(httpServletRequest.getContextPath()+ "/error");
         }
 
-
     }
 
 }

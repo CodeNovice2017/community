@@ -124,8 +124,6 @@ public class AlphaService {
                 post.setCreateTime(new Date());
                 discussPostMapper.insertDiscussPost(post);
 
-                Integer.valueOf("abc");
-
                 return "ok";
             }
         });
