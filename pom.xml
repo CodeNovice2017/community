@@ -40,6 +40,7 @@
 			<scope>test</scope>
 		</dependency>
 
+<!--		aop组件-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-aop</artifactId>
@@ -87,6 +88,13 @@
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
 			<version>1.2.73</version>
+		</dependency>
+
+<!--		redis-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+			<version>2.3.4.RELEASE</version>
 		</dependency>
 
 	</dependencies>
