@@ -134,8 +134,6 @@ public class MessageController {
     @ResponseBody
     public String addLetter(String targetName,String content){
 
-        Integer.valueOf("abc");
-
         User target = userService.findUserByUsername(targetName);
         if (target == null) {
             return CommunityUtil.getJSONString(1, "目标用户不存在!");

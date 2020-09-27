@@ -7,6 +7,7 @@ import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.CommentService;
 import com.nowcoder.community.service.DiscussPostService;
+import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
@@ -31,6 +32,9 @@ public class DiscussPostController implements CommunityConstant{
     private HostHolder hostHolder;
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private LikeService likeService;
 
     @Autowired
     private CommentService commentService;
@@ -59,15 +63,23 @@ public class DiscussPostController implements CommunityConstant{
         return CommunityUtil.getJSONString(0,"发布成功!");
     }
 
-    @LoginRequired
     @RequestMapping(path = "/detail/{discussPostId}",method = RequestMethod.GET)
     // 为了评论的分页,传入Page page,只要是entity包下的实体类型,一个java bean(并不是由Spring管理的bean)声明在参数当中,最终Spring MVC都会把这个java bean放在Model里,就可以直接在页面获取
     public String getDiscussPost(Model model, @PathVariable("discussPostId") int discussPostId, Page page){
         // 查询帖子
         DiscussPost discussPost = discussPostService.findDiscussPostById(discussPostId);
         model.addAttribute("post",discussPost);
+        // 作者
         User user = userService.findUserById(discussPost.getUserId());
         model.addAttribute("user",user);
+
+        // 点赞数量
+        long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST,discussPostId);
+        model.addAttribute("likeCount",likeCount);
+        // 点赞状态(当前登录用户是否对这个帖子点过赞)
+        // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
+        int likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_POST,discussPostId);
+        model.addAttribute("likeStatus",likeStatus);
 
         // 帖子评论的处理也应该是在这个请求下完成的
         // 查评论的分页信息
@@ -100,6 +112,14 @@ public class DiscussPostController implements CommunityConstant{
                 // 普通的评论,就是给帖子的评论,我们称为评论
                 // 给评论的评论以后称为回复
 
+                // 点赞数量
+                likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT,comment.getId());
+                commentVo.put("likeCount",likeCount);
+                // 点赞状态(当前登录用户是否对这个帖子点过赞)
+                // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
+                likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_COMMENT,comment.getId());
+                commentVo.put("likeStatus",likeStatus);
+
                 // 回复列表
                 // 评论的评论就不用分页了,一个页面两层分页就比较恶心了,所以直接有多少查多少,从第0条开始查
                 // 要搞懂表的逻辑,通过帖子的评论是discuss_post表中的id和comment表的entity_id相同找出的,同时这也是代表一个帖子回复的数量
@@ -119,6 +139,15 @@ public class DiscussPostController implements CommunityConstant{
                         // 判断回复的目标
                         // 如果等于0,就代表是
                         User target = reply.getTargetId() == 0 ? null : userService.findUserById(reply.getTargetId());
+
+                        // 点赞数量
+                        likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_COMMENT,reply.getId());
+                        replyVo.put("likeCount",likeCount);
+                        // 点赞状态(当前登录用户是否对这个帖子点过赞)
+                        // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
+                        likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_COMMENT,reply.getId());
+                        replyVo.put("likeStatus",likeStatus);
+
                         replyVo.put("target",target);
                         replyVoList.add(replyVo);
                     }
