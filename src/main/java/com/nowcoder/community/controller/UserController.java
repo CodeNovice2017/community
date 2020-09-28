@@ -165,10 +165,6 @@ public class UserController implements CommunityConstant {
     @LoginRequired
     @RequestMapping(path = "/profile/{userId}",method = RequestMethod.GET)
     public String getProfilePage(@PathVariable("userId")int userId,Model model){
-        User loginUser = hostHolder.getUser();
-        if(loginUser!=null){
-            model.addAttribute("loginUser",loginUser);
-        }
         User user = userService.findUserById(userId);
         if(user == null){
             throw new IllegalArgumentException("该用户不存在!");
