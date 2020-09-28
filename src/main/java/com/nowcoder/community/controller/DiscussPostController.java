@@ -78,7 +78,8 @@ public class DiscussPostController implements CommunityConstant{
         model.addAttribute("likeCount",likeCount);
         // 点赞状态(当前登录用户是否对这个帖子点过赞)
         // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
-        int likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_POST,discussPostId);
+        // 一定注意这里查询点赞状态传入的绝不是user.getId(),因为我们是判断当前登录的用户有没有点赞,而user.getId()是通过当前帖子的作者,这可不一定是登录的用户
+        int likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(),ENTITY_TYPE_POST,discussPostId);
         model.addAttribute("likeStatus",likeStatus);
 
         // 帖子评论的处理也应该是在这个请求下完成的
@@ -117,7 +118,7 @@ public class DiscussPostController implements CommunityConstant{
                 commentVo.put("likeCount",likeCount);
                 // 点赞状态(当前登录用户是否对这个帖子点过赞)
                 // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
-                likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_COMMENT,comment.getId());
+                likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(),ENTITY_TYPE_COMMENT,comment.getId());
                 commentVo.put("likeStatus",likeStatus);
 
                 // 回复列表
@@ -145,7 +146,7 @@ public class DiscussPostController implements CommunityConstant{
                         replyVo.put("likeCount",likeCount);
                         // 点赞状态(当前登录用户是否对这个帖子点过赞)
                         // 但是还要考虑,帖子详情页,如果用户没有登录应该也能访问,但是如果这么直接写会显示空指针异常,所以要做一层判断,如果说没有登录,那么点赞状态就返回0,就是没赞过,因为根本没身份
-                        likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(user.getId(),ENTITY_TYPE_COMMENT,reply.getId());
+                        likeStatus = hostHolder.getUser()==null? 0 : likeService.findEntityLikeStatus(hostHolder.getUser().getId(),ENTITY_TYPE_COMMENT,reply.getId());
                         replyVo.put("likeStatus",likeStatus);
 
                         replyVo.put("target",target);

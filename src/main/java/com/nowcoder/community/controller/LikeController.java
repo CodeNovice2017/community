@@ -26,14 +26,14 @@ public class LikeController {
     @RequestMapping(path = "/like",method = RequestMethod.POST)
     @ResponseBody
     @LoginRequired
-    public String like(int entityType,int entityId){
+    public String like(int entityType,int entityId,int entityUserId){
         User user = hostHolder.getUser();
 
         // 不用判断用户是否登陆,通过拦截器先要求登录
         // 之后会用Spring Security对项目重构,对拦截器进行重构,用Security统一管理这样的权限问题
 
         // 点赞
-        likeService.like(user.getId(),entityType,entityId);
+        likeService.like(user.getId(),entityType,entityId,entityUserId);
         // 数量
         long likeCount = likeService.findEntityLikeCount(entityType,entityId);
         // 状态
