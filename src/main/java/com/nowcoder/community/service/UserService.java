@@ -7,9 +7,11 @@ import com.nowcoder.community.entity.User;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.MailClient;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -18,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserService implements CommunityConstant {
@@ -30,8 +33,11 @@ public class UserService implements CommunityConstant {
     @Autowired
     private TemplateEngine templateEngine;
 
+//    @Autowired
+//    private LoginTicketMapper loginTicketMapper;
+
     @Autowired
-    private LoginTicketMapper loginTicketMapper;
+    private RedisTemplate redisTemplate;
 
     // 发邮件要生成激活码,激活码邮件要包含域名还有项目名
     // 域名配了key,项目名很早就server.servlet.context-path=/community配置了
@@ -43,8 +49,17 @@ public class UserService implements CommunityConstant {
 
     // 根据UserId查询user的方法
     public User findUserById(int id){
-        return userMapper.selectById(id);
+//        return userMapper.selectById(id);
+
+        // 重构之后应该首先先从cache中查
+        User user = getCache(id);
+        if(user == null){
+            user = initCache(id);
+        }
+        return user;
     }
+
+
 
     // 返回值可以设置为整数,表示返回不同的状态,也可以返回String,也可以返回自定义的类,这个方法返回各种错误信息,密码不能为空,账号不能为空等错误信息
     public Map<String,Object> register(User user){
@@ -115,6 +130,7 @@ public class UserService implements CommunityConstant {
 
     // 激活账号
     // 重复激活情况给提示,激活码伪造失败,成功激活三种情况,我们设计一个接口Interface存储常量,以便之后复用,然后直接让UserService实现这个类就行了
+    // 修改了用户状态,所以需要吧Redis的用户缓存清理掉
     public int activation(int userId,String code){
 
         // 先查到用户,然后看激活码对不对
@@ -123,6 +139,10 @@ public class UserService implements CommunityConstant {
             return ACTIVATION_REPEAT;
         } else if(user.getActivationCode().equals(code)){
             userMapper.updateStatus(userId,1);
+
+            // 重构
+            clearCache(userId);
+
             return ACTIVATION_SUCCESS;
         } else{
             return ACTIVATION_FAILURE;
@@ -169,7 +189,14 @@ public class UserService implements CommunityConstant {
         loginTicket.setTicket(CommunityUtil.generateUUID());
         loginTicket.setStatus(0);
         loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
-        loginTicketMapper.insertLoginTicket(loginTicket);
+//        loginTicketMapper.insertLoginTicket(loginTicket);
+
+        String redisKey = RedisKeyUtil.getTicketKey(loginTicket.getTicket());
+        // 我们还是使用字符串来存,那么问题来了,这不是一个对象么,我们可以把他序列化为一个JSON字符串即可
+        // redis会自动把这个对象序列化一个JSON字符串保存
+        // 同时这个ticket是持久化在Redis中的,没有过期时间
+        // 用户换一个客户端登录就会生成一个新的唯一的LoginTicket,但无论用户在哪里登录,登录成功后浏览器会存一个Cookie
+        redisTemplate.opsForValue().set(redisKey,loginTicket);
 
         // 可以放整个LoginTicket对象,也可以只放ticket
         // 其实login_ticket这张表就相当于一个session了,我们可以通过cookie的信息获取到ticket,进而获取到userId等信息
@@ -180,18 +207,35 @@ public class UserService implements CommunityConstant {
 
     // 退出登录
     public void logout(String ticket) {
-        loginTicketMapper.updateStatus(ticket, 1);
+//        loginTicketMapper.updateStatus(ticket, 1);
+        String redisKey = RedisKeyUtil.getTicketKey(ticket);
+        // 有了Key之后,我们要先把LoginTicket取出来,把这个对象的状态修改完之后,再存回去
+        // 用强制类型转换
+        LoginTicket loginTicket = (LoginTicket)redisTemplate.opsForValue().get(redisKey);
+        loginTicket.setStatus(1);
+        // 把更新了的值覆盖了原有的值
+        redisTemplate.opsForValue().set(redisKey,loginTicket);
     }
 
     // 获取用户ticket对应的信息,封装在LoginTicket对象返回
     public LoginTicket findLoginTicket(String ticket){
-        LoginTicket loginTicket = loginTicketMapper.selectByTicket(ticket);
-        return loginTicket;
+//        LoginTicket loginTicket = loginTicketMapper.selectByTicket(ticket);
+        String redisKey = RedisKeyUtil.getTicketKey(ticket);
+        return (LoginTicket)redisTemplate.opsForValue().get(redisKey);
     }
 
     // 更新用户headerUrl
     public int updateHeaderUrl(int userId,String headerUrl){
-        return userMapper.updateHeader(userId,headerUrl);
+
+        // 重构
+        // 直接在return前面加一个clearCache(userId);不太好,因为无法保证MySQL事务和Redis事务在一个范围之内
+        // 就是怕clear执行成功,但是下面updateHeader执行失败
+        // 还是应该先更新,在删缓存
+//        clearCache(userId);
+//        return userMapper.updateHeader(userId,headerUrl);
+        int rows = userMapper.updateHeader(userId,headerUrl);
+        clearCache(userId);
+        return rows;
     }
 
     // 修改用户密码
@@ -226,10 +270,33 @@ public class UserService implements CommunityConstant {
             return map;
         }
         userMapper.updatePassword(user.getId(),newPassword);
+        clearCache(user.getId());
         return map;
     }
 
     public User findUserByUsername(String username){
         return userMapper.selectByName(username);
+    }
+
+    // 用户信息缓存重构Redis,3个方法
+    // 1. 优先从缓存中取值
+    // 给UserService内部调用
+    private User getCache(int userId){
+        String redisKey = RedisKeyUtil.getUserKey(userId);
+        // 还是直接存User对象,Redis会自动序列化为JSON字符串
+        return (User)redisTemplate.opsForValue().get(redisKey);
+    }
+    // 2. 取不到时初始化缓存数据
+    private User initCache(int userId){
+        User user = userMapper.selectById(userId);
+        String redisKey = RedisKeyUtil.getUserKey(userId);
+        // 记得别忘了设置一个小时的缓存时间
+        redisTemplate.opsForValue().set(redisKey,user,3600, TimeUnit.SECONDS);
+        return user;
+    }
+    // 3. 当数据变更时清除缓存数据
+    private void clearCache(int userId){
+        String redisKey = RedisKeyUtil.getUserKey(userId);
+        redisTemplate.delete(redisKey);
     }
 }

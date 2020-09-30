@@ -19,6 +19,14 @@ public class RedisKeyUtil {
     private static final String PREFIX_FOLLOWEE = "followee";
     private static final String PREFIX_FOLLOWER = "follower";
 
+    // 存验证码Redis重构
+    private static final String PREFIX_KAPTCHA = "kaptcha";
+    // 登录凭证Redis重构
+    private static final String PREFIX_TICKET = "ticket";
+
+    private static final String PREFIX_USER = "user";
+
+
 
     // 写一个静态方法,要求传入一些变量,我来拼接为完整的KEY
     // 生成某个实体的赞
@@ -52,5 +60,22 @@ public class RedisKeyUtil {
     // follower:entityType:entityId -> zset(userId,now)
     public static String getFollowerKey(int entityType,int entityId){
         return PREFIX_FOLLOWER + SPLIT + entityType + SPLIT + entityId;
+    }
+
+    // 验证码的Key
+    // 要识别这个验证码是属于哪个用户的,而且并不是直接加userId的,因为验证码是辅助用户登录的,所以当用户访问登录页面时,还没登陆,还不知道userId
+    // 我们可以当用户访问页面时,给用户发一个凭证,一个随机生成的字符串,发给用户,让用户存在Cookie里,我们以字符串来标识这个用户,然后很快让这个字符串过期即可
+    public static String getKaptchaKey(String owner){
+        return PREFIX_KAPTCHA + SPLIT + owner;
+    }
+
+    // 登录凭证Key
+    public static String getTicketKey(String ticket){
+        return PREFIX_TICKET + SPLIT + ticket;
+    }
+
+    // 用户信息缓存Key
+    public static String getUserKey(int userId){
+        return PREFIX_USER + SPLIT + userId;
     }
 }

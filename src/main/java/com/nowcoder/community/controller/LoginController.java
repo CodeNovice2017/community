@@ -4,11 +4,14 @@ import com.google.code.kaptcha.Producer;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
+import com.nowcoder.community.util.CommunityUtil;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -24,6 +27,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 public class LoginController implements CommunityConstant {
@@ -33,6 +37,9 @@ public class LoginController implements CommunityConstant {
 
     @Autowired
     private Producer kaptchaProducer;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //注入application.properties中的一个固定的值,就要使用Value注解,这个并不是注入bean,当然也可以通过HttpServletRequest获取到
     @Value("${server.servlet.context-path}")
@@ -92,14 +99,33 @@ public class LoginController implements CommunityConstant {
     @RequestMapping(path = "/kaptcha",method = RequestMethod.GET)
     // 方法返回值写void,因为像网页中返回的是一个特别的东西(图片),并不是String也不是html,所以需要自己用Response对象手动像浏览器输出
     // 另外,生成验证码之后,服务端需要把这个验证码记住,当登录的时候要检查输入的对不对,这个验证码是敏感信息,并不能存在浏览器端,而且要在多个请求之中用,要存在服务器端,一次请求是生成保存,以此请求要用这个数据,所以要用到session
-    public void getKaptcha(HttpServletResponse httpServletResponse, HttpSession httpSession){
+    public void getKaptcha(HttpServletResponse httpServletResponse){
 
         // 生成验证码
         String text = kaptchaProducer.createText();
         BufferedImage bufferedImage = kaptchaProducer.createImage(text);
 
-        // 将验证码存入session
-        httpSession.setAttribute("kaptcha",text);
+//        // 将验证码存入session
+//        httpSession.setAttribute("kaptcha",text);
+
+
+        // Redis验证码重构
+        // 验证码的归属问题
+        // 临时给客户颁发凭证
+        String kaptchaStringOwner = CommunityUtil.generateUUID();
+        Cookie cookie = new Cookie("kaptchaStringOwner",kaptchaStringOwner);
+        // cookie 60s的生存时间
+        cookie.setMaxAge(60);
+        // cookie生效的路径,设置为整个项目下都有效
+        cookie.setPath(contextPath);
+        httpServletResponse.addCookie(cookie);
+
+        // 将验证码存入Redis
+        String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaStringOwner);
+        // set方法有重载的方法,可以直接设置生存时间
+        redisTemplate.opsForValue().set(redisKey,text,60, TimeUnit.SECONDS);
+        // 上面的代码重构完,当我们首次访问login页面时,getKaptcha方法被调用,然后验证码就生成并存在了Redis中
+        // 客户端Cookie和服务端Redis的redisKey的生存时间都是60秒
 
         // 将图片输出给浏览器
         // 首先声明给浏览器返回的是什么类型的数据
@@ -122,13 +148,27 @@ public class LoginController implements CommunityConstant {
     // 还需要获取用户请求/login页面时,还会请求kaptcha生成验证码图片,我们将验证码信息保存在了session中,所以需要session
     // 登陆成功的话还需要给用户返回ticket,通过cookie传递,所以需要HttpServletResponse
     public String login(Model model,String username,String password,String code,boolean rememberme,
-                        HttpSession session,HttpServletResponse response){
+                        /*HttpSession session*/HttpServletResponse response,@CookieValue("kaptchaStringOwner")String kaptchaStringOwner){
 
+        /*
         // 检查验证码(这个是要在控制层判断的)
         // 如果验证码不对,账号密码不用看了
         // 方法返回的是Object类型,需要做强制转换
         String kaptcha = (String)session.getAttribute("kaptcha");
         // 两个都不能为空,也不能不相等
+        */
+
+        // 重构验证码
+        String kaptcha = null;
+        // 然后我们要从Redis取值,从Redis取要有那个Key,而Key就要有kaptchaowner,需要从cookie中取
+        // 判断客户端浏览器的Cookie还存不存在,因为Cookie也是配置了生存时间的
+        if(StringUtils.isNotBlank(kaptchaStringOwner)){
+            // Cookie的这个key不为空代表还没有失效,这个时候我才去Redis取
+            String redisKey = RedisKeyUtil.getKaptchaKey(kaptchaStringOwner);
+            kaptcha = (String)redisTemplate.opsForValue().get(redisKey);
+        }
+
+
         if(StringUtils.isBlank(kaptcha) || StringUtils.isBlank(code) || !kaptcha.equalsIgnoreCase(code)){
             model.addAttribute("codeMsg","验证码不正确");
             return "/site/login";
