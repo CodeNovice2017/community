@@ -40,6 +40,13 @@ public class ServiceLogAspect {
         // 在这里就不能声明个参数,Spring MVC自动传入了
         // RequestContextHolder.getRequestAttributes()的返回对象强转为其子类型ServletRequestAttributes,这样提供的方法更多一些
         ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        // 如果servletRequestAttributes==null的话,表示这是一个特殊的调用
+        // (比如kafka的生产者和消费者,消费者EventConsumer调用了Service,但实际上它不是一个Controller,自然也没有请求的路径,自然也获取不到request对象)
+        // 这里就可以进行判断,如果是特殊的Service调用,那么就可以不要试图获取ip了,或者直接不记日志了
+        if(servletRequestAttributes == null){
+            return;
+        }
         HttpServletRequest httpServletRequest = servletRequestAttributes.getRequest();
         String ip = httpServletRequest.getRemoteHost();
 

@@ -1,8 +1,10 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
+import com.nowcoder.community.entity.Event;
 import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.event.EventProducer;
 import com.nowcoder.community.service.FollowService;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
@@ -31,6 +33,9 @@ public class FollowController implements CommunityConstant {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private EventProducer eventProducer;
+
     @LoginRequired
     // 因为是提交数据的过程,所以应该是POST请求
     @RequestMapping(path = "/follow",method = RequestMethod.POST)
@@ -38,6 +43,20 @@ public class FollowController implements CommunityConstant {
     public String follow(int entityType,int entityId){
         User user = hostHolder.getUser();
         followService.follow(user.getId(),entityType,entityId);
+
+        // 5.11
+        // 触发关注事件
+        Event event = new Event()
+                .setTopic(TOPIC_FOLLOW)
+                .setUserId(hostHolder.getUser().getId())
+                // 目前关注是只关注了用户的,所以entityType只为3的
+                .setEntityType(entityType)
+                .setEntityId(entityId)
+                // 目前只能关注人,所以entityUesrId也只能是entityId,因为entityId在关注业务中目前就是userId
+                .setEntityUserId(entityId);
+                // 关注是用户XX关注了你,通过这条消息点击查看不是连接某个帖子,而是连接到关注你的这个人的主页上去,
+                // 而评论/点赞都需要转到帖子详情页去,所以需要postId,而此处不用
+        eventProducer.fireEvent(event);
         return CommunityUtil.getJSONString(0,"已关注");
     }
 

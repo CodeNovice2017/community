@@ -1,8 +1,13 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.entity.Comment;
+import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.Event;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.event.EventProducer;
 import com.nowcoder.community.service.CommentService;
+import com.nowcoder.community.service.DiscussPostService;
+import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.HostHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,13 +20,19 @@ import java.util.Date;
 
 @Controller
 @RequestMapping(path = "/comment")
-public class CommentController {
+public class CommentController implements CommunityConstant {
 
     @Autowired
     private CommentService commentService;
 
     @Autowired
     private HostHolder hostHolder;
+
+    @Autowired
+    private EventProducer eventProducer;
+
+    @Autowired
+    private DiscussPostService discussPostService;
 
     // 处理添加评论的请求时要注意,我们是希望能够在回复评论时候,直接将用户页面跳转回这个帖子页面的
     // 但是帖子的详情页面是有路径参数的
@@ -48,6 +59,30 @@ public class CommentController {
 
         // 额外添加这三个值之后就全了
         commentService.addComment(comment);
+
+        // 5.11
+        // 添加评论以后就要通知了
+        // 触发了评论事件
+        Event event = new Event()
+                .setTopic(TOPIC_COMMENT)
+                .setUserId(hostHolder.getUser().getId())
+                .setEntityType(comment.getEntityType())
+                .setEntityId(comment.getEntityId())
+                .setData("postId",discussPostId);
+        // 上面的event还有一个entityUserId没有拼,
+        // 因为我评论的可能是帖子,也可能是评论的评论,那么entityUserId就要查,如果是帖子那就要查帖子表的userId,如果是评论那就要在comment表的userId
+        if(comment.getEntityType() == ENTITY_TYPE_POST){
+            // 触发的事件是评论事件,所以entityType=2,但是查询评论这个业务时,帖子这个实体是ENTITY_TYPE_POST,这两个entityType是两个概念,
+            // 对帖子的回复,那么UserId就是当前用户的id,entityUserId就是用户评论的帖子的id,
+            // 事件触发后,用户的系统通知列表应该是查询toId=entityUserId来显示消费者放入message表的消息的
+            DiscussPost target = discussPostService.findDiscussPostById(discussPostId);
+            event.setEntityUserId(target.getUserId());
+        }else if(comment.getEntityType() == ENTITY_TYPE_COMMENT){
+            // 触发的事件是评论,具体是评论的评论,这条评论的评论应该是通过comment.getEntityId()来找到是对哪条帖子评论的评论
+            Comment target = commentService.findCommentById(comment.getEntityId());
+            event.setEntityUserId(target.getUserId());
+        }
+        eventProducer.fireEvent(event);
 
         return "redirect:/discuss/detail/" + discussPostId;
     }
