@@ -1,10 +1,8 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
-import com.nowcoder.community.entity.Comment;
-import com.nowcoder.community.entity.DiscussPost;
-import com.nowcoder.community.entity.Page;
-import com.nowcoder.community.entity.User;
+import com.nowcoder.community.entity.*;
+import com.nowcoder.community.event.EventProducer;
 import com.nowcoder.community.service.CommentService;
 import com.nowcoder.community.service.DiscussPostService;
 import com.nowcoder.community.service.LikeService;
@@ -39,6 +37,9 @@ public class DiscussPostController implements CommunityConstant{
     @Autowired
     private CommentService commentService;
 
+    @Autowired
+    private EventProducer eventProducer;
+
     @RequestMapping(path = "/add", method = RequestMethod.POST)
     @ResponseBody
     // 页面上只传递过来标题和内容,Controller就是处理请求的,所以以后见到Controller方法的参数就要想到这都是接收到请求中的参数
@@ -57,6 +58,23 @@ public class DiscussPostController implements CommunityConstant{
         // type和status默认就是0,不用非得设置也可以
         discussPost.setCreateTime(new Date());
         discussPostService.addDiscussPost(discussPost);
+
+
+        // 触发发帖事件,消费者会把新发布的帖子装进ES服务器里
+        // 这个事件就类似于之前的点赞,关注,回复的事件触发,就是说点赞,关注,回复是通过事件来驱动的
+        // 并不是kafka叫消息队列,所以它就负责发送消息了,kafka发送的是一个事件,事件触发调用fireEvent,
+        // 指定主题,还有发送的Event序列化的JSON字符串,发送到消息队列中
+        // 具体怎么处理这个事件,是由消费者决定的
+        // 我们这里触发的事件只是,每次新发布帖子的时候,不只是要将DiscussPost存入MySQL的discuss_post表,还要通过生产消费将其存入ES服务器
+        // 而并不是现在触发了就利用ES在搜索,也就是ES同样是一个数据库也得存数据,只有把数据存好,才能查询
+        Event event = new Event()
+                .setTopic(TOPIC_PUBLISH)
+                .setUserId(hostHolder.getUser().getId())
+                .setEntityType(ENTITY_TYPE_POST)
+                .setEntityId(discussPost.getId());
+        eventProducer.fireEvent(event);
+        // 还要注意的就是发布评论的时候,发布评论,那么帖子的评论数量就变了,相当于改了帖子,那这个时候还需要触发一次这个事件,覆盖掉ES内之前的帖子的数据
+        // 要去commentController去修改
 
         // 如果说执行到这里,那么就代表发布成功,那么有人会问难道上面的代码就确保成功不会出错吗,将来我们会统一处理这些问题
         // 报错的情况将来统一处理

@@ -84,6 +84,18 @@ public class CommentController implements CommunityConstant {
         }
         eventProducer.fireEvent(event);
 
+        // 还要注意的就是发布评论的时候,发布评论,那么帖子的评论数量就变了,相当于改了帖子,那这个时候还需要触发一次这个事件,覆盖掉ES内之前的帖子的数据
+        // 先判断,是对帖子的评论再去触发发帖事件,因为对评论的评论是不影响帖子的评论数的
+        if(comment.getEntityType() == ENTITY_TYPE_POST){
+            event = new Event()
+                    .setTopic(TOPIC_PUBLISH)
+                    .setUserId(hostHolder.getUser().getId())
+                    .setEntityType(ENTITY_TYPE_POST)
+                    .setEntityId(discussPostId);
+            eventProducer.fireEvent(event);
+        }
+
+
         return "redirect:/discuss/detail/" + discussPostId;
     }
 }

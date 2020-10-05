@@ -1,8 +1,11 @@
 package com.nowcoder.community.event;
 
 import com.alibaba.fastjson.JSONObject;
+import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.Event;
 import com.nowcoder.community.entity.Message;
+import com.nowcoder.community.service.DiscussPostService;
+import com.nowcoder.community.service.ElasticsearchService;
 import com.nowcoder.community.service.MessageService;
 import com.nowcoder.community.util.CommunityConstant;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -24,6 +27,11 @@ public class EventConsumer implements CommunityConstant {
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private DiscussPostService discussPostService;
+    @Autowired
+    private ElasticsearchService elasticsearchService;
 
     // 我们可以写一个方法消费一个主题,也可以一个方法消费多个主题,就通过@KafkaListener(topics={"test"})来指定一个或多个主题
     // 在我们的项目中,因为系统消息的发布,就是在消息页面通知某某某点赞了,某某关注了,这些消息的逻辑比较相似,所以采用整合一个方法
@@ -93,5 +101,25 @@ public class EventConsumer implements CommunityConstant {
         // 也就是说实际上我们并不是通过kafka来直接给用户发送消息,发送消息,显示消息的逻辑依然是由Controller和Service加上模板引擎完成的
         // kafka在这个业务中的角色,就是充当中间的一个消息事件生产和如何消费事件的角色,注意这里的消息事件是理解为一个事件,这个事件才是由kafka来生产消费的
         // 而最后用户显示的系统消息依然是要用模板引擎等技术实现的
+    }
+
+    // 增加一个新的主题的处理方式
+    @KafkaListener(topics = {TOPIC_PUBLISH})
+    public void handlePublishMessage(ConsumerRecord consumerRecord){
+        if(consumerRecord == null || consumerRecord.value() == null){
+            logger.error("消息的内容为空!");
+            return;
+        }
+        // 将消息的内容(JSON格式的字符串)恢复为一个Event事件对象
+        Event event = JSONObject.parseObject(consumerRecord.value().toString(),Event.class);
+        if(event == null){
+            // 如果有值,但是还原不回来,那么就是格式不对
+            logger.error("消息格式错误!");
+            return;
+        }
+
+        // 我们只要从消息事件中得到帖子id,查到对应的帖子,然后存入ES服务器即可
+        DiscussPost discussPost = discussPostService.findDiscussPostById(event.getEntityId());
+        elasticsearchService.saveDiscussPost(discussPost);
     }
 }
