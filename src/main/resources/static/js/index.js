@@ -7,6 +7,20 @@ function publish() {
 	// 点击发布按钮后,发布界面隐藏
 	$("#publishModal").modal("hide");
 
+	// 我们已经启用了CSRF攻击,那么我们每一个异步请求都要这么处理,如果不处理其他的异步请求也像上面更改,
+	// 服务器无法得到token,那么这个时候就会认为被攻击了,就不让访问了,本项目为了省事就不添加CSRF了
+
+	// 发送AJAX请求之前,将CSRF令牌设置到请求消息头中
+	// 获取meta中name=_csrf的meta元素
+	// var token = $("meta[name='_csrf']").attr("content");
+	// var header = $("meta[name='_csrf_header']").attr("content");
+	// 发送请求之前对请求参数做一个设置
+	// 传入一个匿名函数,其中xhr就是发送异步请求的核心对象,需要通过他设置请求头
+	// 这样设置以后,请求里面就会携带header和token数据
+	// $(document).ajaxSend(function(e,xhr,options){
+	// 	xhr.setRequestHeader(header,token);
+	// });
+
 	// 获取标题和内容
 	var title = $("#recipient-name").val();
 	var content = $("#message-text").val();

@@ -3,6 +3,15 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!--	访问该页面时,在此处生成CSRF令牌-->
+<!--	但我们引入Spring Security之后,每次请求当中都会有一个_csrf对象(应该已经放入Model中了)-->
+<!--	<meta name="_csrf" th:content="${_csrf.token}">-->
+<!--	异步请求的时候,因为没有表单,那么我们怎么去把这个数据传给服务器呢-->
+<!--	这个token传递时,不是通过请求体,而是通过请求的消息头传,消息头是一个key,一个value,而token是一个value,那么我们还需要获得key-->
+<!--	总之,当我们访问这个页面的时候,Spring Security就会在这两个meta里生成csrf的key和value,那我们发异步请求时,把这个标签里面的值取到即可-->
+<!--	<meta name="_csrf_header" th:content="${_csrf.headerName}">-->
+
 	<link rel="icon" href="https://static.nowcoder.com/images/logo_87_87.png"/>
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
 <!--	绝对路径,没什么歧义就可以直接这么写,但是如果是相对路径,开发静态页面时可能是这样的关系,但是引入动态的项目中的话,可能会发生一些变化,但是可以通过thymeleaf的语法来处理-->
