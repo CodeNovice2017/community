@@ -33,5 +33,12 @@ public interface DiscussPostMapper {
     // 提高查询的速度
     // 所以新插入帖子的评论时就要同时更新comment_count字段值
     int updateCommentCount(int id,int commentCount);
+
+    // 根据id改类型
+    int updateType(int id, int type);
+    // 根据id改状态
+    int updateStatus(int id, int status);
+
+    int updateScore(int id, double score);
 }
 

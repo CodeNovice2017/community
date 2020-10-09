@@ -62,7 +62,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Comm
                     AUTHORITY_ADMIN,
                     AUTHORITY_MODERATOR
                 // 除了上面路径以外的所以路径是所有人都可以访问的
-                ).anyRequest().permitAll()
+                ).antMatchers(
+                "/discuss/top",
+                "/discuss/wonderful"
+        )
+                .hasAnyAuthority(
+                        AUTHORITY_MODERATOR
+                )
+                .antMatchers(
+                        "/discuss/delete",
+                        "/data/**"
+                )
+                .hasAnyAuthority(
+                        AUTHORITY_ADMIN
+                )
+                .anyRequest().permitAll()
                 .and().csrf().disable();
 
         // 权限不够的处理
