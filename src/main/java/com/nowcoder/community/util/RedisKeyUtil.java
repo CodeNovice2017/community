@@ -31,6 +31,9 @@ public class RedisKeyUtil {
     // DAU日活跃用户统计
     private static final String PREFIX_DAU = "dau";
 
+    // 为了计算有分数变动帖子的缓存
+    private static final String PREFIX_POST = "post";
+
 
 
     // 写一个静态方法,要求传入一些变量,我来拼接为完整的KEY
@@ -102,5 +105,10 @@ public class RedisKeyUtil {
     // 区间活跃用户
     public static String getDAUKey(String startDate, String endDate) {
         return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
+    }
+
+    // 帖子分数
+    public static String getPostScoreKey() {
+        return PREFIX_POST + SPLIT + "score";
     }
 }

@@ -22,8 +22,8 @@ public class DiscussPostService {
 
     // 当前的方法实际上就是吧数据查出来,没有什么业务,有可能就有想法直接略过Service这层,直接在Controller内调用Mapper,但是这是不对的,为了将来业务考虑也不应该直接略过Service层
 
-    public List<DiscussPost> findDiscussPost(int userId, int offset, int limit){
-        return discussPostMapper.selectDiscussPosts(userId,offset,limit);
+    public List<DiscussPost> findDiscussPost(int userId, int offset, int limit,int orderMode){
+        return discussPostMapper.selectDiscussPosts(userId,offset,limit,orderMode);
     }
 
     public int findDiscussPostRows(int userId) {

@@ -14,7 +14,7 @@ public interface DiscussPostMapper {
     // 可以编写动态的SQL,userId为0时,不需要加上userId这个条件,而当userId不为0时,才要这个条件
     // offset 是每一页起始行的行号,limit每页最多显示帖子数
     // 因为要支持分页,那就要求要知道一共需要有多少页,帖子数/每页显示多少条
-    List<DiscussPost> selectDiscussPosts(int userId, int offset,int limit);
+    List<DiscussPost> selectDiscussPosts(int userId, int offset,int limit,int orderMode);
 
 
     // @Param注解用于给参数取别名,比如有的参数名比较长,嫌到sql中写的麻烦就起一个别名

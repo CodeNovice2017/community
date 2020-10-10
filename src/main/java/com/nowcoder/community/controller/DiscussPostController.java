@@ -10,7 +10,9 @@ import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +41,9 @@ public class DiscussPostController implements CommunityConstant{
 
     @Autowired
     private EventProducer eventProducer;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(path = "/add", method = RequestMethod.POST)
     @ResponseBody
@@ -75,6 +80,17 @@ public class DiscussPostController implements CommunityConstant{
         eventProducer.fireEvent(event);
         // 还要注意的就是发布评论的时候,发布评论,那么帖子的评论数量就变了,相当于改了帖子,那这个时候还需要触发一次这个事件,覆盖掉ES内之前的帖子的数据
         // 要去commentController去修改
+
+        // 新增帖子的时候给帖子一个初始的分数
+        // 计算帖子分数
+        String redisKey = RedisKeyUtil.getPostScoreKey();
+        // 接下来要把帖子Id放入redis中,redis中有很多数据类型,我应该采用什么来存呢?
+        // 可能有的人认为放在队列是比较不错的选择,先后发生的顺序去计算,但是这并不好
+        // 可能点赞的顺序是这样的先对A帖子点赞,A->B->A->C->A
+        // 那么算的时候,比如先算A然后中间又算了一遍A,然后又算了一遍A,每次我们都是把A所有的指标计算一次,这样相当于后两次算的是重复的
+        // 再有用队列是为了顺序,但是实际上是没有顺序的,不管这段时间点了多少次赞,实际上我们只是用Redis记住了哪个帖子分数发生了变化,而不是用Redis记住了发生了什么变化
+        // 所以应该使用set,不允许重复
+        redisTemplate.opsForSet().add(redisKey,discussPost.getId());
 
         // 如果说执行到这里,那么就代表发布成功,那么有人会问难道上面的代码就确保成功不会出错吗,将来我们会统一处理这些问题
         // 报错的情况将来统一处理
@@ -198,6 +214,10 @@ public class DiscussPostController implements CommunityConstant{
                 .setEntityType(ENTITY_TYPE_POST)
                 .setEntityId(id);
         eventProducer.fireEvent(event);
+
+        // 计算帖子分数
+        String redisKey = RedisKeyUtil.getPostScoreKey();
+        redisTemplate.opsForSet().add(redisKey,id);
 
         return CommunityUtil.getJSONString(0);
     }

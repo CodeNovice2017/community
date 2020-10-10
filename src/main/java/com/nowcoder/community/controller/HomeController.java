@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,15 +33,15 @@ public class HomeController implements CommunityConstant {
     private LikeService likeService;
 
     @RequestMapping(path = "/index",method = RequestMethod.GET)
-    public String getIndexPage(Model model, Page page){
+    public String getIndexPage(Model model, Page page,@RequestParam(name = "orderMode",defaultValue = "0") int orderMode){
 
         // 总行数
         // 首页 不以用户id为参数查询 所以参数填0
         page.setRows(discussPostService.findDiscussPostRows(0));
-        page.setPath("/index");
+        page.setPath("/index?orderMode=" + orderMode);
         // page还有当前页码,每页显示数据,html页面可以传进来,就无须服务器操心了
 
-        List<DiscussPost> list = discussPostService.findDiscussPost(0,page.getOffset(),page.getLimit());
+        List<DiscussPost> list = discussPostService.findDiscussPost(0,page.getOffset(),page.getLimit(),orderMode);
         // 这个集合里面是一个能够封装DiscussPost以及User对象的一个对象
         List<Map<String,Object>> discussPosts = new ArrayList<>();
         if(!list.isEmpty()){
@@ -60,6 +61,7 @@ public class HomeController implements CommunityConstant {
         model.addAttribute("discussPosts",discussPosts);
         // 最后返回模板的路径
         // 同时因为Thymeleaf的模板就是html文件,就是固定的一个文件,所以不需要写后缀,就只写文件名即可,只要心里知道下面这个路径的view指的是index.html即可
+        model.addAttribute("orderMode",orderMode);
         return "/index";
     }
 

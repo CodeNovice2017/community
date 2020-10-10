@@ -1,6 +1,7 @@
 package com.nowcoder.community.config;
 
 import com.nowcoder.community.quartz.AlphaJob;
+import com.nowcoder.community.quartz.DiscussPostScoreRefreshJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.springframework.context.annotation.Bean;
@@ -61,6 +62,29 @@ public class QuartzConfig {
         // 多长时间执行一次这个任务
         factoryBean.setRepeatInterval(3000);
         // Trigger的底层需要存储Job的一些状态,那需要指定用哪个对象来存,我们就指定一个默认的对象即可,也可以去写一个新的类型
+        factoryBean.setJobDataMap(new JobDataMap());
+        return factoryBean;
+    }
+
+    // 刷新帖子分数任务
+    @Bean
+    public JobDetailFactoryBean postScoreRefreshJobDetail() {
+        JobDetailFactoryBean factoryBean = new JobDetailFactoryBean();
+        factoryBean.setJobClass(DiscussPostScoreRefreshJob.class);
+        factoryBean.setName("postScoreRefreshJob");
+        factoryBean.setGroup("communityJobGroup");
+        factoryBean.setDurability(true);
+        factoryBean.setRequestsRecovery(true);
+        return factoryBean;
+    }
+
+    @Bean
+    public SimpleTriggerFactoryBean postScoreRefreshTrigger(JobDetail postScoreRefreshJobDetail) {
+        SimpleTriggerFactoryBean factoryBean = new SimpleTriggerFactoryBean();
+        factoryBean.setJobDetail(postScoreRefreshJobDetail);
+        factoryBean.setName("postScoreRefreshTrigger");
+        factoryBean.setGroup("communityTriggerGroup");
+        factoryBean.setRepeatInterval(1000 * 60 * 5);
         factoryBean.setJobDataMap(new JobDataMap());
         return factoryBean;
     }

@@ -52,13 +52,13 @@ public class ElasticsearchTests {
     @Test
     public void testInsertList(){
         for (int i = 101; i < 104; i++) {
-            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100));
+            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100,0));
         }
         for (int i = 111; i < 113; i++) {
-            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100));
+            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100,0));
         }
         for (int i = 131; i < 135; i++) {
-            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100));
+            discussPostRepository.saveAll(discussPostMapper.selectDiscussPosts(i,0,100,0));
         }
 
     }
