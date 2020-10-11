@@ -8,6 +8,8 @@ import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -54,14 +57,71 @@ public class UserController implements CommunityConstant {
     @Autowired
     private FollowService followService;
 
+    @Value("${qiniu.key.access}")
+    private String accessKey;
+
+    @Value("${qiniu.key.secret}")
+    private String secretKey;
+
+    @Value("${qiniu.bucket.header.name}")
+    private String headerBucketName;
+
+    @Value("${quniu.bucket.header.url}")
+    private String headerBucketUrl;
+
     @LoginRequired
     @RequestMapping(path = "/setting",method = RequestMethod.GET)
-    public String getSettingPage(){
+    public String getSettingPage(Model model){
+
+        // 用户设置路径,里面有打开上传头像表单的页面
+        // 我们需要在这里生成上传凭证,把这个凭证写在表单里
+        // 当我们打开表单的时候,表单中应该是有凭证的
+        // 这样表单提交的时候才可以提交给七牛云
+
+        // 生成上传凭证
+        // 一个是需要上传文件的名称
+        // 一个是把资源传给七牛云之后,期待它给一个什么形式的响应,可以把这个响应做一个规定,七牛云会按照规定作出响应
+        // 这样我们好知道成功或者失败
+
+        // 上传文件名称
+        // 为什么不用userId呢?因为如果用户改动了,后面的头像会覆盖之前的头像,覆盖以后如果将来有一天想开发足迹的功能,想显示这些年的头像就没了
+        // 如果说同名覆盖的话,因为云服务器都是有缓存的,如果名字不变,因为有缓存,不会立刻刷新
+        String fileName = CommunityUtil.generateUUID();
+        // 设置响应信息
+        // 七牛云的规定
+        StringMap policy = new StringMap();
+        // 响应体响应什么内容,因为我们使用客户端直传通常会采用异步的方式来传,因为异步返回一个JSON字符串比较方便
+        // 如果用同步的方式传,它响应的是一个Html,那么我们现在访问的是牛客网,确实七牛云返回一个网页,这就比较乱套了
+        // 七牛云只要告诉我们成功与否就可以了,后续我们自己做处理,因此我想让他返回一个JSON字符串,告诉我是否成功就可以了
+        // CommunityUtil.getJSONString(0)会生成一个JSON字符串,就是{"code":0},就是说我希望成功的时候返回{"code":0},失败只要不是这个就当做失败
+        policy.put("returnBody", CommunityUtil.getJSONString(0));
+        // 生成上传凭证
+        Auth auth = Auth.create(accessKey, secretKey);
+        // 生成的凭证就是一个字符串,参数分别是上传空间的名字,文件名,token过期时间,响应体信息
+        String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, policy);
+
+        // 然后就页面上利用这两个数据重新构造表单,并且把表单的提交方式改为异步的,提交给七牛云即可
+        model.addAttribute("uploadToken", uploadToken);
+        model.addAttribute("fileName", fileName);
 
         return "/site/setting";
-
     }
 
+    // 更新头像路径
+    @RequestMapping(path = "/header/url",method = RequestMethod.POST)
+    @ResponseBody
+    public String updateHeaderUrl(String fileName){
+        if (StringUtils.isBlank(fileName)) {
+            return CommunityUtil.getJSONString(1, "文件名不能为空!");
+        }
+
+        // 七牛云上的文件访问路径就是域名+文件名,不需要后缀
+        String url = headerBucketUrl + "/" + fileName;
+        userService.updateHeaderUrl(hostHolder.getUser().getId(), url);
+        return CommunityUtil.getJSONString(0);
+    }
+
+    // 废弃
     @LoginRequired
     @RequestMapping(path = "/upload",method = RequestMethod.POST)
     // 使用SpringMVC提供的一个专有的类型接收图像文件,如果页面传入多个,可以写成数组
@@ -107,6 +167,7 @@ public class UserController implements CommunityConstant {
         return "redirect:/index";
     }
 
+    // 废弃
     // 获取头像
     @RequestMapping(path = "/header/{fileName}",method = RequestMethod.GET)
     // 这个方法返回值为void,因为这个方法比较特别,因为它向浏览器响应的不是一个网页,是一个二进制数据的图片,所以要通过流主动向浏览器输出,要手动输出到Response,不需要视图

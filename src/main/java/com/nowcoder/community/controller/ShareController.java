@@ -44,6 +44,13 @@ public class ShareController implements CommunityConstant {
     @Value("${wk.image.storage}")
     private String wkImageStorage;
 
+    // 分享空间的url
+    // 因为我们没有在这个方法中实现分享(生成长图)
+    // 只是把它丢给了队列
+    // 但是我们要给浏览器返回路径,而且要把这个路径改成七牛云
+    @Value("${qiniu.bucket.share.url}")
+    private String shareBucketUrl;
+
     @RequestMapping(path = "/share", method = RequestMethod.GET)
     @ResponseBody
     // 参数:分享的时候是哪个功能,传入功能
@@ -65,13 +72,16 @@ public class ShareController implements CommunityConstant {
         // 异步的处理长图,这里需要给用户返回一个访问路径,告诉用户怎样去访问
         // 利用我们通用的页面JSON返回消息,0表示成功,msg为null不需要消息,把返回的访问路径放入map中
         Map<String,Object> map = new HashMap<>();
-        map.put("shareUrl", domain + contextPath + "/share/image/" + fileName);
-        // map.put("shareUrl", shareBucketUrl + "/" + fileName);
+//        map.put("shareUrl", domain + contextPath + "/share/image/" + fileName);
+        // 不用之前的服务器的路径了,要改为七牛云空间Bucket的url+fileName了
+        map.put("shareUrl", shareBucketUrl + "/" + fileName);
         return CommunityUtil.getJSONString(0,null,map);
     }
 
+    // 废弃
     // 获取长图
     // 逻辑类似于获取用户头像
+    // 这个是之前的方法,是从我们本地把图片取到返回给客户端,现在不需要了,一旦服务端传给七牛云云服务器之后,那就直接通过七牛云获取图片
     @RequestMapping(path = "/share/image/{fileName}", method = RequestMethod.GET)
     // 因为这个方法就不是给浏览器返回一个模板,而是直接给浏览器返回一个图片,那么我们就使用HttpServletResponse直接处理响应给浏览器
     public void getShareImage(@PathVariable("fileName") String fileName, HttpServletResponse response) {

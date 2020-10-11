@@ -65,15 +65,41 @@
 			<div class="container p-5 mt-3 mb-3">
 				<!-- 上传头像 -->
 				<h6 class="text-left text-info border-bottom pb-2">上传头像</h6>
-				<form class="mt-5" method="post" th:action="@{/user/upload}" enctype="multipart/form-data">
+<!--				因为这个表单要多一些内容,而且这个表单还不是普通的提交,还要改成异步的,所以改动较大,干脆把原有表单注掉-->
+<!--				<form class="mt-5" method="post" th:action="@{/user/upload}" enctype="multipart/form-data">-->
+<!--					<div class="form-group row mt-4">-->
+<!--						<label for="head-image" class="col-sm-2 col-form-label text-right">选择头像:</label>-->
+<!--						<div class="col-sm-10">-->
+<!--							<div class="custom-file">-->
+<!--&lt;!&ndash;								文件框需要加上name,name要和Controller的请求处理方法的参数匹配起来&ndash;&gt;-->
+<!--								<input type="file" th:class="|custom-file-input ${error!=null?'is-invalid':''}|" id="head-image" name="headerImage" lang="es" required="">-->
+<!--								<label class="custom-file-label" for="head-image" data-browse="文件">选择一张图片</label>-->
+<!--								<div class="invalid-feedback" th:text="${error}">-->
+<!--									该账号不存在!-->
+<!--								</div>-->
+<!--							</div>-->
+<!--						</div>-->
+<!--					</div>-->
+<!--					<div class="form-group row mt-4">-->
+<!--						<div class="col-sm-2"></div>-->
+<!--						<div class="col-sm-10 text-center">-->
+<!--							<button type="submit" class="btn btn-info text-white form-control">立即上传</button>-->
+<!--						</div>-->
+<!--					</div>-->
+<!--				</form>-->
+
+				<!--上传到七牛云-->
+<!--				这个表单因为是异步的上传,所以不需要form标签的action等属性,因为我们要通过JS编写上传的逻辑-->
+				<form class="mt-5" id="uploadForm">
 					<div class="form-group row mt-4">
 						<label for="head-image" class="col-sm-2 col-form-label text-right">选择头像:</label>
 						<div class="col-sm-10">
 							<div class="custom-file">
-<!--								文件框需要加上name,name要和Controller的请求处理方法的参数匹配起来-->
-								<input type="file" th:class="|custom-file-input ${error!=null?'is-invalid':''}|" id="head-image" name="headerImage" lang="es" required="">
+								<input type="hidden" name="token" th:value="${uploadToken}">
+								<input type="hidden" name="key" th:value="${fileName}">
+								<input type="file" class="custom-file-input" id="head-image" name="file" lang="es" required="">
 								<label class="custom-file-label" for="head-image" data-browse="文件">选择一张图片</label>
-								<div class="invalid-feedback" th:text="${error}">
+								<div class="invalid-feedback">
 									该账号不存在!
 								</div>
 							</div>
@@ -86,6 +112,7 @@
 						</div>
 					</div>
 				</form>
+
 				<!-- 修改密码 -->
 				<h6 class="text-left text-info border-bottom pb-2 mt-5">修改密码</h6>
 				<form class="mt-5" method="post" th:action="@{/user/updatePassword}">
@@ -194,6 +221,7 @@
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.js" crossorigin="anonymous"></script>
 	<script th:src="@{/js/global.js}"></script>
+	<script th:src="@{/js/setting.js}"></script>
 	<script>
 		$(function(){
 			bsCustomFileInput.init();
