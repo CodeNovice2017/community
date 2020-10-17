@@ -72,7 +72,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Comm
                 // 管理员专门有的权限配置
                 .antMatchers(
                         "/discuss/delete",
-                        "/data/**"
+                        "/data/**",
+                        "/actuator/**"
                 )
                 .hasAnyAuthority(
                         AUTHORITY_ADMIN
@@ -96,12 +97,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter implements Comm
                         // 如果是异步请求,拼一个JSON字符串,然后浏览器上给一个提示或者通过前端的手段引导用户去登陆
                         // 如何判断当前请求是普通还是异步呢?
                         // 主要是看请求消息头的某个值
-                        String xRequestWith = httpServletRequest.getHeader("x-request-with");
+                        String xRequestWith = httpServletRequest.getHeader("x-requested-with");
                         // 异步请求期待返回的是xml,异步请求ajax里面的x代表xml,但现在被JSON给代替了
                         if("XMLHttpRequest".equals(xRequestWith)){
                             // 设置ContentType为"application/plain"表示是普通字符串,但是我们要确保这个字符串是JSON格式
                             // 这样前台才能够解析
-                            httpServletResponse.setContentType("application/plain;charset=utf8");
+                            httpServletResponse.setContentType("application/plain;charset=utf-8");
                             PrintWriter writer = httpServletResponse.getWriter();
                             // 为了返回异步请求的时候,肯定要用到我们预先定义好的JSON返回工具了CommunityUtil.getJSONString()方法
                             // 当没有权限的时候,服务器拒绝访问的时候,而不是服务器报错的时候,通常返回状态码403
